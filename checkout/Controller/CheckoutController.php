@@ -8,6 +8,7 @@ use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Engine\JsonResponse;
 use CoreCart\System\Dto\OrderCreateDTO;
+use CoreCart\System\Infrastructure\SessionInterface;
 
 class CheckoutController
 {
@@ -20,39 +21,44 @@ class CheckoutController
 
     public function index(Request $request): Response
     {
-        $sessionId = session_id();
+        $sessionId = $this->getSessionId();
+        $customerId = $request->getUserId();
         $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);
-        $cart = $cartService->getCart($sessionId);
+        $cart = $cartService->getCart($sessionId, $customerId);
 
         if (empty($cart['items'])) {
             return JsonResponse::error('Cart is empty', 400);
         }
 
         return JsonResponse::success([
-            'cart'   => $cart,
-            'total'  => $cart['total'],
+            'cart'  => $cart,
+            'total' => $cart['total'],
         ]);
     }
 
     public function confirm(Request $request): Response
     {
-        $sessionId = session_id();
-        $customerId = $_SESSION['customer_id'] ?? null;
-        $comment = $request->getInput('comment', '');
+        $sessionId = $this->getSessionId();
+        $customerId = $request->getUserId();
 
-        $dto = new OrderCreateDTO(
-            customerId: $customerId ? (int) $customerId : null,
-            comment: $comment
-        );
+        $dto = OrderCreateDTO::fromArray(array_merge(
+            $request->getBody(),
+            ['customer_id' => $customerId]
+        ));
 
         try {
             $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
 
             if ($customerId) {
-                $orderId = $orderService->createOrderFromCart((int) $customerId, $dto);
+                $orderId = $orderService->createOrderFromCart($customerId, $dto);
             } else {
                 $orderId = $orderService->createOrder($sessionId, $dto);
             }
+
+            // Store order_id in session for the success page verification
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('last_order_id', $orderId);
 
             return JsonResponse::success(
                 ['order_id' => $orderId],
@@ -64,11 +70,21 @@ class CheckoutController
         }
     }
 
+    /**
+     * Success page — verifies the order belongs to the current user/session.
+     */
     public function success(Request $request): Response
     {
         $orderId = (int) $request->getQueryParam('order_id', 0);
-        if ($orderId <= 0) {
-            return new JsonResponse(['message' => 'Order placed. Thank you!']);
+
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        // Verify order belongs to this user
+        $lastOrderId = (int) $session->get('last_order_id', 0);
+
+        if ($orderId !== $lastOrderId) {
+            return JsonResponse::error('Order not found', 404);
         }
 
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
@@ -78,10 +94,26 @@ class CheckoutController
             return JsonResponse::error('Order not found', 404);
         }
 
+        // Verify ownership for logged-in users
+        $userId = $request->getUserId();
+        if ($userId && $order->customerId !== $userId) {
+            return JsonResponse::error('Order not found', 404);
+        }
+
+        // Clear the last_order_id to prevent reuse
+        $session->remove('last_order_id');
+
         return JsonResponse::success([
             'order_id' => $order->id,
             'total'    => $order->total,
             'status'   => $order->status,
         ], 'Order placed successfully');
+    }
+
+    private function getSessionId(): string
+    {
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+        return $session->getId();
     }
 }

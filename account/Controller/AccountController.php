@@ -19,19 +19,19 @@ class AccountController
 
     public function profile(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
 
         $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-        $customer = $customerService->getCustomer((int) $customerId);
+        $customer = $customerService->getCustomer($customerId);
 
         if (!$customer) {
             return JsonResponse::error('Customer not found', 404);
         }
 
-        $addresses = $customerService->getAddresses((int) $customerId);
+        $addresses = $customerService->getAddresses($customerId);
 
         return JsonResponse::success([
             'customer'  => $customer->toArray(),
@@ -41,7 +41,7 @@ class AccountController
 
     public function password(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
@@ -53,7 +53,7 @@ class AccountController
 
         try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-            $customerService->changePassword((int) $customerId, $password);
+            $customerService->changePassword($customerId, $password);
             return JsonResponse::success(null, 'Password updated');
         } catch (\InvalidArgumentException $e) {
             return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');

@@ -1,6 +1,5 @@
 # Dependencies
 /vendor/
-composer.lock
 
 # Composer binary (installed locally)
 /composer
@@ -25,3 +24,4 @@ composer.lock
 /.vscode/
 *.swp
 *.swo
+.phpunit.result.cache

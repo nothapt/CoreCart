@@ -3,9 +3,6 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
-/**
- * Redirect Response
- */
 class RedirectResponse extends Response
 {
     public function __construct(string $url, int $statusCode = 302)
@@ -15,25 +12,19 @@ class RedirectResponse extends Response
     }
 
     /**
-     * Shorthand: redirect back.
+     * Redirect back using the Referer header from the request.
      */
-    public static function back(): self
+    public static function back(Request $request): self
     {
-        $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+        $referer = $request->getHeader('Referer', '/');
         return new self($referer, 302);
     }
 
-    /**
-     * Shorthand: redirect to URL with 303 (See Other).
-     */
     public static function to(string $url): self
     {
         return new self($url, 302);
     }
 
-    /**
-     * Shorthand: permanent redirect.
-     */
     public static function permanent(string $url): self
     {
         return new self($url, 301);

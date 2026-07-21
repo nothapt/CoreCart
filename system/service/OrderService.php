@@ -7,8 +7,9 @@ use CoreCart\System\Repository\OrderRepository;
 use CoreCart\System\Repository\CartRepository;
 use CoreCart\System\Repository\ProductRepository;
 use CoreCart\System\Repository\CustomerRepository;
-use CoreCart\System\Entity\Order;
+use CoreCart\System\Repository\AddressRepository;
 use CoreCart\System\Dto\OrderCreateDTO;
+use CoreCart\System\Infrastructure\OrderStatus;
 
 class OrderService
 {
@@ -16,17 +17,20 @@ class OrderService
     private CartRepository $cartRepo;
     private ProductRepository $productRepo;
     private CustomerRepository $customerRepo;
+    private AddressRepository $addressRepo;
 
     public function __construct(
         OrderRepository $orderRepo,
         CartRepository $cartRepo,
         ProductRepository $productRepo,
-        CustomerRepository $customerRepo
+        CustomerRepository $customerRepo,
+        AddressRepository $addressRepo
     ) {
         $this->orderRepo = $orderRepo;
         $this->cartRepo = $cartRepo;
         $this->productRepo = $productRepo;
         $this->customerRepo = $customerRepo;
+        $this->addressRepo = $addressRepo;
     }
 
     public function getOrder(int $id): ?Order
@@ -34,7 +38,7 @@ class OrderService
         return $this->orderRepo->findById($id);
     }
 
-    public function getOrders(int $page = 1, int $perPage = 20, ?int $status = null): array
+    public function getOrders(int $page = 1, int $perPage = 20, ?OrderStatus $status = null): array
     {
         $offset = ($page - 1) * $perPage;
         $orders = $this->orderRepo->findAll($perPage, $offset, $status);
@@ -60,135 +64,261 @@ class OrderService
         ];
     }
 
+    /**
+     * Create order from session cart — atomic transaction.
+     */
     public function createOrder(string $sessionId, OrderCreateDTO $dto): int
     {
-        $items = $this->cartRepo->findBySession($sessionId);
+        return $this->orderRepo->db()->transaction(function ($db) use ($sessionId, $dto) {
+            // Lock cart rows for this session
+            $cartItems = $db->query(
+                "SELECT c.cart_id, c.product_id, c.quantity,
+                        pd.name, p.price, p.quantity AS stock, p.status
+                 FROM cc_cart c
+                 LEFT JOIN cc_product p ON (c.product_id = p.product_id)
+                 LEFT JOIN cc_product_description pd ON (p.product_id = pd.product_id AND pd.language_id = 1)
+                 WHERE c.session_id = :sid AND c.customer_id IS NULL
+                 FOR UPDATE",
+                ['sid' => $sessionId]
+            );
 
-        if (empty($items)) {
-            throw new \RuntimeException('Cart is empty');
-        }
-
-        // Validate stock and build order items
-        $orderItems = [];
-        $total = '0.0000';
-
-        foreach ($items as $item) {
-            $product = $this->productRepo->findById($item->productId);
-
-            if (!$product) {
-                throw new \RuntimeException("Product #{$item->productId} not found");
+            if (empty($cartItems)) {
+                throw new \RuntimeException('Cart is empty');
             }
 
-            if ($product->status !== 1) {
-                throw new \RuntimeException("Product '{$item->productName}' is not available");
+            $total = '0.0000';
+            $orderItems = [];
+
+            foreach ($cartItems as $item) {
+                if ((int) $item['status'] !== 1) {
+                    throw new \RuntimeException("Product '{$item['name']}' is not available");
+                }
+                if ((int) $item['stock'] < (int) $item['quantity']) {
+                    throw new \RuntimeException(
+                        "Insufficient stock for '{$item['name']}': requested {$item['quantity']}, available {$item['stock']}"
+                    );
+                }
+
+                $subtotal = (string) bcmul($item['price'], (string) $item['quantity'], 4);
+                $total = (string) bcadd($total, $subtotal, 4);
+
+                $orderItems[] = [
+                    'product_id' => (int) $item['product_id'],
+                    'name'       => $item['name'] ?? '',
+                    'quantity'   => (int) $item['quantity'],
+                    'price'      => $item['price'],
+                ];
             }
 
-            if ($product->quantity < $item->quantity) {
-                throw new \RuntimeException(
-                    "Insufficient stock for '{$item->productName}'. Available: {$product->quantity}"
+            // Build order data with snapshot
+            $orderData = [
+                'customer_id'       => $dto->customerId,
+                'status'            => OrderStatus::Pending->value,
+                'total'             => $total,
+                'comment'           => $dto->comment,
+                'customer_email'    => $dto->customerEmail ?? null,
+                'customer_phone'    => $dto->customerPhone ?? null,
+                'shipping_firstname'  => $dto->shippingFirstname ?? null,
+                'shipping_lastname'   => $dto->shippingLastname ?? null,
+                'shipping_address_1'  => $dto->shippingAddress1 ?? null,
+                'shipping_address_2'  => $dto->shippingAddress2 ?? null,
+                'shipping_city'       => $dto->shippingCity ?? null,
+                'shipping_postcode'   => $dto->shippingPostcode ?? null,
+                'shipping_country'    => $dto->shippingCountry ?? null,
+                'shipping_zone'       => $dto->shippingZone ?? null,
+                'currency_code'       => 'USD',
+                'currency_value'      => '1.0000',
+            ];
+
+            // Create order
+            $db->execute(
+                "INSERT INTO cc_order (customer_id, status, total, comment,
+                     customer_email, customer_phone,
+                     shipping_firstname, shipping_lastname,
+                     shipping_address_1, shipping_address_2,
+                     shipping_city, shipping_postcode,
+                     shipping_country, shipping_zone,
+                     currency_code, currency_value)
+                 VALUES (:cid, :status, :total, :comment,
+                     :email, :phone,
+                     :s_fn, :s_ln, :s_a1, :s_a2,
+                     :s_city, :s_pc, :s_country, :s_zone,
+                     :currency, :currency_val)",
+                $orderData
+            );
+
+            $orderId = (int) $db->lastInsertId();
+
+            // Create order items
+            foreach ($orderItems as $item) {
+                $db->execute(
+                    "INSERT INTO cc_order_product (order_id, product_id, name, quantity, price)
+                     VALUES (:oid, :pid, :name, :qty, :price)",
+                    [
+                        'oid'   => $orderId,
+                        'pid'   => $item['product_id'],
+                        'name'  => $item['name'],
+                        'qty'   => $item['quantity'],
+                        'price' => $item['price'],
+                    ]
                 );
             }
 
-            $subtotal = (string) bcmul($product->price, (string) $item->quantity, 4);
-            $total = (string) bcadd($total, $subtotal, 4);
+            // Atomically decrease stock and verify affected rows
+            foreach ($orderItems as $item) {
+                $affected = $db->execute(
+                    "UPDATE cc_product SET quantity = quantity - :qty
+                     WHERE product_id = :pid AND quantity >= :qty2",
+                    ['qty' => $item['quantity'], 'qty2' => $item['quantity'], 'pid' => $item['product_id']]
+                );
+                if ($affected === 0) {
+                    throw new \RuntimeException(
+                        "Failed to decrease stock for product #{$item['product_id']}: concurrent modification"
+                    );
+                }
+            }
 
-            $orderItems[] = [
-                'product_id' => $item->productId,
-                'name'       => $item->productName ?? $product->name ?? '',
-                'quantity'   => $item->quantity,
-                'price'      => $product->price,
-            ];
-        }
+            // Clear cart
+            $db->execute(
+                "DELETE FROM cc_cart WHERE session_id = :sid AND customer_id IS NULL",
+                ['sid' => $sessionId]
+            );
 
-        // Create order and decrease stock in transaction
-        $orderId = $this->orderRepo->create(
-            [
-                'customer_id' => $dto->customerId,
-                'status'      => 0,
-                'total'       => $total,
-                'comment'     => $dto->comment,
-            ],
-            $orderItems
-        );
-
-        // Decrease stock for each product
-        foreach ($orderItems as $item) {
-            $this->productRepo->decreaseStock($item['product_id'], $item['quantity']);
-        }
-
-        // Clear the cart
-        $this->cartRepo->clearSession($sessionId);
-
-        return $orderId;
+            return $orderId;
+        });
     }
 
+    /**
+     * Create order from customer cart — atomic transaction.
+     */
     public function createOrderFromCart(int $customerId, OrderCreateDTO $dto): int
     {
-        $items = $this->cartRepo->findByCustomer($customerId);
+        return $this->orderRepo->db()->transaction(function ($db) use ($customerId, $dto) {
+            $cartItems = $db->query(
+                "SELECT c.cart_id, c.product_id, c.quantity,
+                        pd.name, p.price, p.quantity AS stock, p.status
+                 FROM cc_cart c
+                 LEFT JOIN cc_product p ON (c.product_id = p.product_id)
+                 LEFT JOIN cc_product_description pd ON (p.product_id = pd.product_id AND pd.language_id = 1)
+                 WHERE c.customer_id = :cid
+                 FOR UPDATE",
+                ['cid' => $customerId]
+            );
 
-        if (empty($items)) {
-            throw new \RuntimeException('Cart is empty');
-        }
-
-        $orderItems = [];
-        $total = '0.0000';
-
-        foreach ($items as $item) {
-            $product = $this->productRepo->findById($item->productId);
-
-            if (!$product) {
-                throw new \RuntimeException("Product #{$item->productId} not found");
+            if (empty($cartItems)) {
+                throw new \RuntimeException('Cart is empty');
             }
 
-            if ($product->status !== 1) {
-                throw new \RuntimeException("Product '{$item->productName}' is not available");
+            $total = '0.0000';
+            $orderItems = [];
+
+            foreach ($cartItems as $item) {
+                if ((int) $item['status'] !== 1) {
+                    throw new \RuntimeException("Product '{$item['name']}' is not available");
+                }
+                if ((int) $item['stock'] < (int) $item['quantity']) {
+                    throw new \RuntimeException(
+                        "Insufficient stock for '{$item['name']}': requested {$item['quantity']}, available {$item['stock']}"
+                    );
+                }
+
+                $subtotal = (string) bcmul($item['price'], (string) $item['quantity'], 4);
+                $total = (string) bcadd($total, $subtotal, 4);
+
+                $orderItems[] = [
+                    'product_id' => (int) $item['product_id'],
+                    'name'       => $item['name'] ?? '',
+                    'quantity'   => (int) $item['quantity'],
+                    'price'      => $item['price'],
+                ];
             }
 
-            if ($product->quantity < $item->quantity) {
-                throw new \RuntimeException(
-                    "Insufficient stock for '{$item->productName}'. Available: {$product->quantity}"
+            $orderData = [
+                'customer_id'       => $customerId,
+                'status'            => OrderStatus::Pending->value,
+                'total'             => $total,
+                'comment'           => $dto->comment,
+                'customer_email'    => $dto->customerEmail ?? null,
+                'customer_phone'    => $dto->customerPhone ?? null,
+                'shipping_firstname'  => $dto->shippingFirstname ?? null,
+                'shipping_lastname'   => $dto->shippingLastname ?? null,
+                'shipping_address_1'  => $dto->shippingAddress1 ?? null,
+                'shipping_address_2'  => $dto->shippingAddress2 ?? null,
+                'shipping_city'       => $dto->shippingCity ?? null,
+                'shipping_postcode'   => $dto->shippingPostcode ?? null,
+                'shipping_country'    => $dto->shippingCountry ?? null,
+                'shipping_zone'       => $dto->shippingZone ?? null,
+                'currency_code'       => 'USD',
+                'currency_value'      => '1.0000',
+            ];
+
+            $db->execute(
+                "INSERT INTO cc_order (customer_id, status, total, comment,
+                     customer_email, customer_phone,
+                     shipping_firstname, shipping_lastname,
+                     shipping_address_1, shipping_address_2,
+                     shipping_city, shipping_postcode,
+                     shipping_country, shipping_zone,
+                     currency_code, currency_value)
+                 VALUES (:cid, :status, :total, :comment,
+                     :email, :phone,
+                     :s_fn, :s_ln, :s_a1, :s_a2,
+                     :s_city, :s_pc, :s_country, :s_zone,
+                     :currency, :currency_val)",
+                $orderData
+            );
+
+            $orderId = (int) $db->lastInsertId();
+
+            foreach ($orderItems as $item) {
+                $db->execute(
+                    "INSERT INTO cc_order_product (order_id, product_id, name, quantity, price)
+                     VALUES (:oid, :pid, :name, :qty, :price)",
+                    [
+                        'oid'   => $orderId,
+                        'pid'   => $item['product_id'],
+                        'name'  => $item['name'],
+                        'qty'   => $item['quantity'],
+                        'price' => $item['price'],
+                    ]
                 );
             }
 
-            $subtotal = (string) bcmul($product->price, (string) $item->quantity, 4);
-            $total = (string) bcadd($total, $subtotal, 4);
+            foreach ($orderItems as $item) {
+                $affected = $db->execute(
+                    "UPDATE cc_product SET quantity = quantity - :qty
+                     WHERE product_id = :pid AND quantity >= :qty2",
+                    ['qty' => $item['quantity'], 'qty2' => $item['quantity'], 'pid' => $item['product_id']]
+                );
+                if ($affected === 0) {
+                    throw new \RuntimeException(
+                        "Failed to decrease stock for product #{$item['product_id']}: concurrent modification"
+                    );
+                }
+            }
 
-            $orderItems[] = [
-                'product_id' => $item->productId,
-                'name'       => $item->productName ?? $product->name ?? '',
-                'quantity'   => $item->quantity,
-                'price'      => $product->price,
-            ];
-        }
+            $db->execute(
+                "DELETE FROM cc_cart WHERE customer_id = :cid",
+                ['cid' => $customerId]
+            );
 
-        $orderId = $this->orderRepo->create(
-            [
-                'customer_id' => $customerId,
-                'status'      => 0,
-                'total'       => $total,
-                'comment'     => $dto->comment,
-            ],
-            $orderItems
-        );
-
-        foreach ($orderItems as $item) {
-            $this->productRepo->decreaseStock($item['product_id'], $item['quantity']);
-        }
-
-        $this->cartRepo->clearCustomer($customerId);
-
-        return $orderId;
+            return $orderId;
+        });
     }
 
-    public function updateStatus(int $id, int $status): bool
+    public function updateStatus(int $id, OrderStatus $status): bool
     {
         $order = $this->orderRepo->findById($id);
         if (!$order) {
             throw new \RuntimeException("Order #{$id} not found");
         }
 
-        if ($status < 0 || $status > 9) {
-            throw new \InvalidArgumentException('Invalid order status');
+        $currentStatus = OrderStatus::fromInt($order->status);
+
+        if (!$currentStatus->canTransitionTo($status)) {
+            throw new \RuntimeException(
+                "Cannot transition from '{$currentStatus->label()}' to '{$status->label()}'"
+            );
         }
 
         return $this->orderRepo->updateStatus($id, $status);
@@ -201,23 +331,31 @@ class OrderService
             throw new \RuntimeException("Order #{$id} not found");
         }
 
-        if ($customerId && $order->customerId !== $customerId) {
+        if ($customerId !== null && $order->customerId !== $customerId) {
             throw new \RuntimeException('Order does not belong to this customer');
         }
 
-        if ($order->status >= 2) {
+        $currentStatus = OrderStatus::fromInt($order->status);
+        if (!$currentStatus->canTransitionTo(OrderStatus::Cancelled)) {
             throw new \RuntimeException('Order cannot be cancelled at this stage');
         }
 
-        // Restore stock
-        foreach ($order->items as $item) {
-            $product = $this->productRepo->findById($item->productId);
-            if ($product) {
-                $this->productRepo->updateQuantity($item->productId, $product->quantity + $item->quantity);
+        // Atomically restore stock
+        return $this->orderRepo->db()->transaction(function ($db) use ($order) {
+            foreach ($order->items as $item) {
+                $db->execute(
+                    "UPDATE cc_product SET quantity = quantity + :qty WHERE product_id = :pid",
+                    ['qty' => $item->quantity, 'pid' => $item->productId]
+                );
             }
-        }
 
-        return $this->orderRepo->updateStatus($id, 9);
+            $db->execute(
+                "UPDATE cc_order SET status = :status WHERE order_id = :id",
+                ['status' => OrderStatus::Cancelled->value, 'id' => $order->id]
+            );
+
+            return true;
+        });
     }
 
     public function getRevenue(string $dateFrom = '', string $dateTo = ''): string

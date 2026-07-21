@@ -1,0 +1,14 @@
+parameters:
+    level: 5
+    paths:
+        - system
+        - admin
+        - catalog
+        - cart
+        - account
+        - checkout
+    excludePaths:
+        - vendor
+        - storage
+    ignoreErrors:
+        - '#Call to an undefined method CoreCart\\System\\Engine\\Container::get\(\)#'

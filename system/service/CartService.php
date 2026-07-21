@@ -5,7 +5,6 @@ namespace CoreCart\System\Service;
 
 use CoreCart\System\Repository\CartRepository;
 use CoreCart\System\Repository\ProductRepository;
-use CoreCart\System\Entity\CartItem;
 use CoreCart\System\Dto\CartAddDTO;
 
 class CartService
@@ -51,8 +50,18 @@ class CartService
             throw new \RuntimeException('Product is not available');
         }
 
-        if ($product->quantity < $dto->quantity) {
-            throw new \RuntimeException('Insufficient stock. Available: ' . $product->quantity);
+        // Check total quantity (existing + new) against stock
+        $existing = $customerId
+            ? $this->cartRepo->findItemByProductForCustomer($customerId, $dto->productId)
+            : $this->cartRepo->findItemByProductForSession($sessionId, $dto->productId);
+
+        $existingQty = $existing ? (int) $existing['quantity'] : 0;
+        $totalQty = $existingQty + $dto->quantity;
+
+        if ($totalQty > $product->quantity) {
+            throw new \RuntimeException(
+                "Insufficient stock for '{$product->name}': requested {$totalQty}, available {$product->quantity}"
+            );
         }
 
         if ($customerId) {
@@ -75,9 +84,11 @@ class CartService
 
         $this->verifyOwnership($item, $sessionId, $customerId);
 
-        $product = $this->productRepo->findById($item->productId);
-        if ($product && $product->quantity < $quantity) {
-            throw new \RuntimeException('Insufficient stock. Available: ' . $product->quantity);
+        $product = $this->productRepo->findById((int) $item['product_id']);
+        if ($product && $quantity > $product->quantity) {
+            throw new \RuntimeException(
+                "Insufficient stock for '{$product->name}': requested {$quantity}, available {$product->quantity}"
+            );
         }
 
         return $this->cartRepo->updateQuantity($cartId, $quantity);
@@ -116,22 +127,14 @@ class CartService
         return $this->cartRepo->count($sessionId);
     }
 
-    public function getCartTotal(string $sessionId, ?int $customerId = null): string
+    private function verifyOwnership(array $item, string $sessionId, ?int $customerId): void
     {
         if ($customerId) {
-            return $this->cartRepo->getTotalByCustomer($customerId);
-        }
-        return $this->cartRepo->getTotal($sessionId);
-    }
-
-    private function verifyOwnership(CartItem $item, string $sessionId, ?int $customerId): void
-    {
-        if ($customerId) {
-            if ($item->customerId !== $customerId) {
+            if (isset($item['customer_id']) && (int) $item['customer_id'] !== $customerId) {
                 throw new \RuntimeException('Cart item does not belong to this customer');
             }
         } else {
-            if ($item->sessionId !== $sessionId) {
+            if (($item['session_id'] ?? '') !== $sessionId) {
                 throw new \RuntimeException('Cart item does not belong to this session');
             }
         }

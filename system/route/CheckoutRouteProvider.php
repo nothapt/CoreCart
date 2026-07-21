@@ -13,6 +13,11 @@ class CheckoutRouteProvider
             \CoreCart\System\Engine\SecurityHeaders::class,
         ];
 
+        $publicWithCsrf = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+        ];
+
         $router->addRoutes([
             'checkout' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
@@ -23,7 +28,7 @@ class CheckoutRouteProvider
             'checkout/confirm' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'confirm',
-                'middleware'  => $public,
+                'middleware'  => $publicWithCsrf,
                 'methods'    => ['POST'],
             ],
             'checkout/success' => [

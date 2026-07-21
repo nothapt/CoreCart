@@ -3,14 +3,6 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
-/**
- * Router with Request/Response support
- *
- * - Routes are registered explicitly
- * - HTTP method filtering
- * - Middleware chain with Request/Response
- * - Controllers receive Request, return Response
- */
 class Router
 {
     private Container $container;
@@ -64,7 +56,6 @@ class Router
     {
         $path = $request->getPath();
 
-        // Entry-point fallback
         if (preg_match('#/(index\.php)$#', $path)) {
             $routeParam = $request->getQueryParam('route', '');
             if ($routeParam !== '') {
@@ -84,68 +75,63 @@ class Router
         $httpMethod = $request->getMethod();
 
         if (!isset($this->routes[$route])) {
-            return $this->errorResponse('Route not found', 404);
+            return new JsonResponse(['error' => 'Route not found'], 404);
         }
 
         $config = $this->routes[$route];
 
         if (!empty($config['methods']) && !in_array($httpMethod, $config['methods'], true)) {
-            return $this->methodNotAllowedResponse($config['methods']);
+            return new JsonResponse(
+                ['error' => 'Method not allowed', 'allowed' => $config['methods']],
+                405,
+                ['Allow' => implode(', ', $config['methods'])]
+            );
         }
 
         $className = $config['controller'];
         $methodName = $config['method'];
 
         if (!$this->isValidMethodName($methodName)) {
-            return $this->errorResponse('Invalid method', 404);
+            return new JsonResponse(['error' => 'Invalid method'], 404);
         }
 
         if (!class_exists($className)) {
-            return $this->errorResponse('Controller not found', 404);
+            return new JsonResponse(['error' => 'Controller not found'], 404);
         }
 
         $controller = new $className($this->container);
 
         if (!method_exists($controller, $methodName)) {
-            return $this->errorResponse('Method not found', 404);
+            return new JsonResponse(['error' => 'Method not found'], 404);
         }
 
         $reflection = new \ReflectionMethod($controller, $methodName);
         if (!$reflection->isPublic()) {
-            return $this->errorResponse('Method not found', 404);
+            return new JsonResponse(['error' => 'Method not found'], 404);
         }
 
-        return $this->runMiddleware($config['middleware'], $request, function () use ($controller, $methodName, $request) {
-            $result = $controller->$methodName($request);
-            if ($result instanceof Response) {
-                return $result;
-            }
-            // If controller returns string, wrap in response
-            if (is_string($result)) {
-                $response = new Response();
-                $response->setBody($result);
-                $response->setHeader('Content-Type', 'text/html; charset=utf-8');
-                return $response;
-            }
-            return new JsonResponse(null);
-        });
+        // Build the final controller callable that accepts the current Request
+        $controllerCallable = static fn(Request $currentRequest): Response =>
+            $controller->$methodName($currentRequest);
+
+        return $this->runMiddleware($config['middleware'], $request, $controllerCallable);
     }
 
     /**
-     * Run middleware chain. Returns Response.
+     * Run middleware in order, passing the (possibly modified) Request through each layer.
      *
-     * @param string[] $middleware
+     * @param string[] $middleware  Middleware class names
      */
-    private function runMiddleware(array $middleware, Request $request, callable $final): Response
+    private function runMiddleware(array $middleware, Request $request, callable $controller): Response
     {
         if (empty($middleware)) {
-            return $final();
+            return $controller($request);
         }
 
-        $chain = function () use ($final) {
-            return $final();
-        };
+        // Start from the innermost: the controller
+        $next = $controller;
 
+        // Wrap each middleware around, innermost first
         foreach (array_reverse($middleware) as $mwClass) {
             $mw = $this->container->get($mwClass);
 
@@ -155,13 +141,14 @@ class Router
                 );
             }
 
-            $prevChain = $chain;
-            $chain = function () use ($mw, $prevChain, $request) {
-                return $mw->handle($request, $prevChain);
-            };
+            $previous = $next;
+            // Each middleware receives the current Request and a $next that accepts Request
+            $next = static fn(Request $currentRequest): Response =>
+                $mw->handle($currentRequest, $previous);
         }
 
-        return $chain();
+        // Kick off the chain with the original request
+        return $next($request);
     }
 
     private function normalizeRoute(string $route): string
@@ -174,22 +161,5 @@ class Router
     private function isValidMethodName(string $name): bool
     {
         return preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_]*$/', $name) === 1;
-    }
-
-    private function errorResponse(string $message, int $code): JsonResponse
-    {
-        return new JsonResponse(
-            ['error' => $message],
-            $code
-        );
-    }
-
-    private function methodNotAllowedResponse(array $allowed): JsonResponse
-    {
-        return new JsonResponse(
-            ['error' => 'Method not allowed', 'allowed' => $allowed],
-            405,
-            ['Allow' => implode(', ', $allowed)]
-        );
     }
 }

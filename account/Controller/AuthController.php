@@ -7,6 +7,7 @@ use CoreCart\System\Engine\Container;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Engine\JsonResponse;
+use CoreCart\System\Infrastructure\SessionInterface;
 use CoreCart\System\Dto\RegisterDTO;
 
 class AuthController
@@ -31,6 +32,12 @@ class AuthController
             return JsonResponse::error('Email and password are required', 422);
         }
 
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        // Save guest session ID BEFORE login (before regenerate)
+        $guestSessionId = $session->getId();
+
         $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
         $user = $customerService->login($email, $password);
 
@@ -38,14 +45,16 @@ class AuthController
             return JsonResponse::error('Invalid credentials', 401);
         }
 
-        session_regenerate_id(true);
-        $_SESSION['customer_id'] = (int) $user['customer_id'];
-        $_SESSION['customer_username'] = $user['username'];
-        $_SESSION['customer_email'] = $user['email'];
+        // Regenerate session to prevent fixation
+        $session->regenerate();
 
-        // Merge guest cart
+        $session->set('customer_id', (int) $user['customer_id']);
+        $session->set('customer_username', $user['username']);
+        $session->set('customer_email', $user['email']);
+
+        // Merge guest cart using the OLD session ID (before regenerate)
         $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);
-        $cartService->mergeGuestToCustomer(session_id(), (int) $user['customer_id']);
+        $cartService->mergeGuestToCustomer($guestSessionId, (int) $user['customer_id']);
 
         return JsonResponse::success([
             'id'       => (int) $user['customer_id'],
@@ -66,10 +75,13 @@ class AuthController
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
             $id = $customerService->register($dto);
 
-            session_regenerate_id(true);
-            $_SESSION['customer_id'] = $id;
-            $_SESSION['customer_username'] = $dto->username;
-            $_SESSION['customer_email'] = $dto->email;
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->regenerate();
+
+            $session->set('customer_id', $id);
+            $session->set('customer_username', $dto->username);
+            $session->set('customer_email', $dto->email);
 
             return JsonResponse::success(['customer_id' => $id], 'Registration successful', 201);
         } catch (\InvalidArgumentException $e) {
@@ -81,14 +93,9 @@ class AuthController
 
     public function logout(Request $request): Response
     {
-        $_SESSION = [];
-
-        if (ini_get('session.use_cookies')) {
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
-        }
-
-        session_destroy();
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+        $session->invalidate();
 
         return JsonResponse::success(null, 'Logged out');
     }

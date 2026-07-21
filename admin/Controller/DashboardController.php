@@ -7,6 +7,7 @@ use CoreCart\System\Engine\Container;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Engine\JsonResponse;
+use CoreCart\System\Infrastructure\OrderStatus;
 
 class DashboardController
 {

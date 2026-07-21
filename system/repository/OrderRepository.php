@@ -6,6 +6,7 @@ namespace CoreCart\System\Repository;
 use CoreCart\System\Engine\Database;
 use CoreCart\System\Entity\Order;
 use CoreCart\System\Entity\OrderItem;
+use CoreCart\System\Infrastructure\OrderStatus;
 
 class OrderRepository
 {
@@ -16,13 +17,23 @@ class OrderRepository
         $this->db = $db;
     }
 
+    public function db(): Database
+    {
+        return $this->db;
+    }
+
     public function findById(int $id): ?Order
     {
         $result = $this->db->query(
-            "SELECT o.order_id, o.customer_id, o.status, o.total, o.comment, o.date_added, o.date_modified,
-                    CONCAT(c.firstname, ' ', c.lastname) AS customer_name
+            "SELECT o.order_id, o.customer_id, o.status, o.total, o.comment,
+                    o.customer_email, o.customer_phone,
+                    o.shipping_firstname, o.shipping_lastname,
+                    o.shipping_address_1, o.shipping_address_2,
+                    o.shipping_city, o.shipping_postcode,
+                    o.shipping_country, o.shipping_zone,
+                    o.currency_code, o.currency_value,
+                    o.date_added, o.date_modified
              FROM cc_order o
-             LEFT JOIN cc_address c ON (o.customer_id = c.customer_id AND c.`default` = 1)
              WHERE o.order_id = :id",
             ['id' => $id]
         );
@@ -40,9 +51,20 @@ class OrderRepository
             status: $order->status,
             total: $order->total,
             comment: $order->comment,
+            customerEmail: $order->customerEmail,
+            customerPhone: $order->customerPhone,
+            shippingFirstname: $order->shippingFirstname,
+            shippingLastname: $order->shippingLastname,
+            shippingAddress1: $order->shippingAddress1,
+            shippingAddress2: $order->shippingAddress2,
+            shippingCity: $order->shippingCity,
+            shippingPostcode: $order->shippingPostcode,
+            shippingCountry: $order->shippingCountry,
+            shippingZone: $order->shippingZone,
+            currencyCode: $order->currencyCode,
+            currencyValue: $order->currencyValue,
             dateAdded: $order->dateAdded,
             dateModified: $order->dateModified,
-            customerName: $order->customerName,
             items: $items,
         );
     }
@@ -59,16 +81,18 @@ class OrderRepository
         return array_map(OrderItem::fromRow(...), $result);
     }
 
-    public function findAll(int $limit = 20, int $offset = 0, ?int $status = null): array
+    public function findAll(int $limit = 20, int $offset = 0, ?OrderStatus $status = null): array
     {
-        $sql = "SELECT o.order_id, o.customer_id, o.status, o.total, o.comment, o.date_added, o.date_modified
+        $sql = "SELECT o.order_id, o.customer_id, o.status, o.total, o.comment,
+                       o.customer_email, o.shipping_firstname, o.shipping_lastname,
+                       o.date_added, o.date_modified
                 FROM cc_order o";
 
         $params = [];
 
         if ($status !== null) {
             $sql .= " WHERE o.status = :status";
-            $params['status'] = $status;
+            $params['status'] = $status->value;
         }
 
         $sql .= " ORDER BY o.date_added DESC LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
@@ -92,17 +116,50 @@ class OrderRepository
         return array_map(Order::fromRow(...), $result);
     }
 
+    public function belongsToCustomer(int $orderId, int $customerId): bool
+    {
+        $result = $this->db->query(
+            "SELECT order_id FROM cc_order WHERE order_id = :id AND customer_id = :cid",
+            ['id' => $orderId, 'cid' => $customerId]
+        );
+        return !empty($result);
+    }
+
     public function create(array $orderData, array $items): int
     {
         return $this->db->transaction(function ($db) use ($orderData, $items) {
             $db->execute(
-                "INSERT INTO cc_order (customer_id, status, total, comment)
-                 VALUES (:cid, :status, :total, :comment)",
+                "INSERT INTO cc_order (customer_id, status, total, comment,
+                     customer_email, customer_phone,
+                     shipping_firstname, shipping_lastname,
+                     shipping_address_1, shipping_address_2,
+                     shipping_city, shipping_postcode,
+                     shipping_country, shipping_zone,
+                     currency_code, currency_value)
+                 VALUES (:cid, :status, :total, :comment,
+                     :email, :phone,
+                     :s_fn, :s_ln,
+                     :s_a1, :s_a2,
+                     :s_city, :s_pc,
+                     :s_country, :s_zone,
+                     :currency, :currency_val)",
                 [
-                    'cid'     => $orderData['customer_id'] ?? null,
-                    'status'  => $orderData['status'] ?? 0,
-                    'total'   => $orderData['total'] ?? '0.0000',
-                    'comment' => $orderData['comment'] ?? null,
+                    'cid'          => $orderData['customer_id'] ?? null,
+                    'status'       => $orderData['status'] ?? OrderStatus::Pending->value,
+                    'total'        => $orderData['total'] ?? '0.0000',
+                    'comment'      => $orderData['comment'] ?? null,
+                    'email'        => $orderData['customer_email'] ?? null,
+                    'phone'        => $orderData['customer_phone'] ?? null,
+                    's_fn'         => $orderData['shipping_firstname'] ?? null,
+                    's_ln'         => $orderData['shipping_lastname'] ?? null,
+                    's_a1'         => $orderData['shipping_address_1'] ?? null,
+                    's_a2'         => $orderData['shipping_address_2'] ?? null,
+                    's_city'       => $orderData['shipping_city'] ?? null,
+                    's_pc'         => $orderData['shipping_postcode'] ?? null,
+                    's_country'    => $orderData['shipping_country'] ?? null,
+                    's_zone'       => $orderData['shipping_zone'] ?? null,
+                    'currency'     => $orderData['currency_code'] ?? 'USD',
+                    'currency_val' => $orderData['currency_value'] ?? '1.0000',
                 ]
             );
 
@@ -126,11 +183,11 @@ class OrderRepository
         });
     }
 
-    public function updateStatus(int $id, int $status): bool
+    public function updateStatus(int $id, OrderStatus $status): bool
     {
         return $this->db->execute(
             "UPDATE cc_order SET status = :status WHERE order_id = :id",
-            ['status' => $status, 'id' => $id]
+            ['status' => $status->value, 'id' => $id]
         ) > 0;
     }
 
@@ -142,14 +199,14 @@ class OrderRepository
         ) > 0;
     }
 
-    public function count(?int $status = null): int
+    public function count(?OrderStatus $status = null): int
     {
         $sql = "SELECT COUNT(*) AS total FROM cc_order";
         $params = [];
 
         if ($status !== null) {
             $sql .= " WHERE status = :status";
-            $params['status'] = $status;
+            $params['status'] = $status->value;
         }
 
         $result = $this->db->query($sql, $params);
@@ -158,8 +215,8 @@ class OrderRepository
 
     public function getRevenue(string $dateFrom = '', string $dateTo = ''): string
     {
-        $sql = "SELECT COALESCE(SUM(total), 0) AS revenue FROM cc_order WHERE status >= 1";
-        $params = [];
+        $sql = "SELECT COALESCE(SUM(total), 0) AS revenue FROM cc_order WHERE status >= :min_status";
+        $params = ['min_status' => OrderStatus::Processing->value];
 
         if ($dateFrom !== '') {
             $sql .= " AND date_added >= :date_from";

@@ -13,8 +13,14 @@ class CartRouteProvider
             \CoreCart\System\Engine\SecurityHeaders::class,
         ];
 
+        $publicWithCsrf = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+        ];
+
         $withRequest = [
             \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
             \CoreCart\System\Engine\RequestMiddleware::class,
         ];
 
@@ -46,7 +52,7 @@ class CartRouteProvider
             'cart/clear' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'clear',
-                'middleware'  => $public,
+                'middleware'  => $publicWithCsrf,
                 'methods'    => ['POST'],
             ],
             'cart/count' => [

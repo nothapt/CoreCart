@@ -20,20 +20,20 @@ class AddressController
 
     public function index(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
 
         $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-        $addresses = $customerService->getAddresses((int) $customerId);
+        $addresses = $customerService->getAddresses($customerId);
 
         return JsonResponse::success(array_map(fn($a) => $a->toArray(), $addresses));
     }
 
     public function create(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
@@ -46,7 +46,7 @@ class AddressController
 
         try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-            $id = $customerService->addAddress((int) $customerId, $dto);
+            $id = $customerService->addAddress($customerId, $dto);
             return JsonResponse::success(['address_id' => $id], 'Address created', 201);
         } catch (\InvalidArgumentException $e) {
             return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
@@ -55,7 +55,7 @@ class AddressController
 
     public function edit(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
@@ -67,7 +67,7 @@ class AddressController
 
         if ($request->isGet()) {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-            $addresses = $customerService->getAddresses((int) $customerId);
+            $addresses = $customerService->getAddresses($customerId);
             foreach ($addresses as $addr) {
                 if ($addr->id === $addressId) {
                     return JsonResponse::success($addr->toArray());
@@ -80,7 +80,7 @@ class AddressController
 
         try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-            $customerService->updateAddress((int) $customerId, $addressId, $dto);
+            $customerService->updateAddress($customerId, $addressId, $dto);
             return JsonResponse::success(null, 'Address updated');
         } catch (\RuntimeException $e) {
             return JsonResponse::error($e->getMessage(), 404);
@@ -89,7 +89,7 @@ class AddressController
 
     public function delete(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
@@ -101,7 +101,7 @@ class AddressController
 
         try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-            $customerService->deleteAddress((int) $customerId, $addressId);
+            $customerService->deleteAddress($customerId, $addressId);
             return JsonResponse::success(null, 'Address deleted');
         } catch (\RuntimeException $e) {
             return JsonResponse::error($e->getMessage(), 404);

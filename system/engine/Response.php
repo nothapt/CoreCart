@@ -3,11 +3,6 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
-/**
- * HTTP Response object
- *
- * Encapsulates status code, headers, body, and cookies.
- */
 class Response
 {
     protected int $statusCode = 200;
@@ -87,15 +82,14 @@ class Response
         }
 
         foreach ($this->cookies as $name => $cookie) {
-            setcookie(
-                $name,
-                $cookie['value'],
-                $cookie['expires'],
-                $cookie['path'],
-                $cookie['domain'],
-                $cookie['secure'],
-                $cookie['httponly']
-            );
+            setcookie($name, $cookie['value'], [
+                'expires'  => $cookie['expires'],
+                'path'     => $cookie['path'],
+                'domain'   => $cookie['domain'],
+                'secure'   => $cookie['secure'],
+                'httponly'  => $cookie['httponly'],
+                'samesite' => $cookie['sameSite'],
+            ]);
         }
 
         echo $this->body;

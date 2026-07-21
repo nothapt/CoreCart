@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
+use CoreCart\System\Infrastructure\AuthenticatedUser;
+use CoreCart\System\Infrastructure\SessionInterface;
+
 class AuthMiddleware implements Middleware
 {
     private int $lifetime = 7200;
@@ -10,59 +13,64 @@ class AuthMiddleware implements Middleware
 
     public function handle(Request $request, callable $next): Response
     {
-        if (empty($_SESSION['admin_user_id'])) {
+        /** @var SessionInterface $session */
+        $session = $this->getSession();
+
+        $userId = $session->get('admin_user_id');
+
+        if (!$userId) {
             return new JsonResponse(['error' => 'Authentication required'], 401);
         }
 
-        $loginTime = $_SESSION['admin_login_time'] ?? 0;
+        // Check absolute session lifetime
+        $loginTime = $session->get('admin_login_time', 0);
         if (time() - $loginTime > $this->lifetime) {
-            $this->destroySession();
+            $session->invalidate();
             return new JsonResponse(['error' => 'Session expired'], 401);
         }
 
-        $lastActivity = $_SESSION['admin_last_activity'] ?? 0;
+        // Check idle timeout
+        $lastActivity = $session->get('admin_last_activity', 0);
         if (time() - $lastActivity > $this->idleTimeout) {
-            $this->destroySession();
+            $session->invalidate();
             return new JsonResponse(['error' => 'Session expired due to inactivity'], 401);
         }
 
-        $_SESSION['admin_last_activity'] = time();
+        $session->set('admin_last_activity', time());
 
+        // Verify user still exists and is active
         $db = $this->getDb();
         $result = $db->query(
-            "SELECT admin_id, status FROM cc_admin_user WHERE admin_id = :id",
-            ['id' => $_SESSION['admin_user_id']]
+            "SELECT admin_id, username, email, status FROM cc_admin_user WHERE admin_id = :id",
+            ['id' => $userId]
         );
 
         if (empty($result)) {
-            $this->destroySession();
+            $session->invalidate();
             return new JsonResponse(['error' => 'User not found'], 401);
         }
 
         if ((int) $result[0]['status'] !== 1) {
-            $this->destroySession();
+            $session->invalidate();
             return new JsonResponse(['error' => 'Account disabled'], 401);
         }
 
-        $user = [
-            'id'       => (int) $_SESSION['admin_user_id'],
-            'username' => $_SESSION['admin_username'] ?? '',
-            'email'    => $_SESSION['admin_email'] ?? '',
-        ];
+        $user = new AuthenticatedUser(
+            id: (int) $result[0]['admin_id'],
+            username: $result[0]['username'],
+            email: $result[0]['email'],
+            role: 'admin',
+        );
 
-        $request = $request->withUser($user);
-
-        return $next($request);
+        return $next($request->withUser($user));
     }
 
-    private function destroySession(): void
+    private function getSession(): SessionInterface
     {
-        $_SESSION = [];
-        if (ini_get('session.use_cookies')) {
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+        if (isset($GLOBALS['corecart_container'])) {
+            return $GLOBALS['corecart_container']->get(SessionInterface::class);
         }
-        session_destroy();
+        throw new \RuntimeException('Session not available');
     }
 
     private function getDb(): Database

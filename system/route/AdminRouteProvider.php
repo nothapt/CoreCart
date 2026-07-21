@@ -18,14 +18,14 @@ class AdminRouteProvider
             \CoreCart\System\Engine\CsrfMiddleware::class,
         ];
 
-        $authWithRequest = [
+        $authWithCsrf = [
             \CoreCart\System\Engine\AuthMiddleware::class,
             \CoreCart\System\Engine\CsrfMiddleware::class,
             \CoreCart\System\Engine\RequestMiddleware::class,
         ];
 
         $router->addRoutes([
-            // Auth
+            // Auth (login public, loginPost with rate limit)
             'admin/auth/login' => [
                 'controller' => \CoreCart\Admin\Controller\AuthController::class,
                 'method'     => 'login',
@@ -69,19 +69,19 @@ class AdminRouteProvider
             'admin/product/create' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'create',
-                'middleware'  => $authWithRequest,
+                'middleware'  => $authWithCsrf,
                 'methods'    => ['POST'],
             ],
             'admin/product/update' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'update',
-                'middleware'  => $authWithRequest,
+                'middleware'  => $authWithCsrf,
                 'methods'    => ['POST'],
             ],
             'admin/product/delete' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'delete',
-                'middleware'  => $auth,
+                'middleware'  => $authWithCsrf,
                 'methods'    => ['POST'],
             ],
 
@@ -95,19 +95,19 @@ class AdminRouteProvider
             'admin/category/create' => [
                 'controller' => \CoreCart\Admin\Controller\CategoryController::class,
                 'method'     => 'create',
-                'middleware'  => $authWithRequest,
+                'middleware'  => $authWithCsrf,
                 'methods'    => ['POST'],
             ],
             'admin/category/update' => [
                 'controller' => \CoreCart\Admin\Controller\CategoryController::class,
                 'method'     => 'update',
-                'middleware'  => $authWithRequest,
+                'middleware'  => $authWithCsrf,
                 'methods'    => ['POST'],
             ],
             'admin/category/delete' => [
                 'controller' => \CoreCart\Admin\Controller\CategoryController::class,
                 'method'     => 'delete',
-                'middleware'  => $auth,
+                'middleware'  => $authWithCsrf,
                 'methods'    => ['POST'],
             ],
 
@@ -127,7 +127,7 @@ class AdminRouteProvider
             'admin/order/updateStatus' => [
                 'controller' => \CoreCart\Admin\Controller\OrderController::class,
                 'method'     => 'updateStatus',
-                'middleware'  => $authWithRequest,
+                'middleware'  => $authWithCsrf,
                 'methods'    => ['POST'],
             ],
 

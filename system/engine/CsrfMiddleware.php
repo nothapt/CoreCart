@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
+use CoreCart\System\Infrastructure\SessionInterface;
+
 class CsrfMiddleware implements Middleware
 {
     public function handle(Request $request, callable $next): Response
@@ -28,21 +30,34 @@ class CsrfMiddleware implements Middleware
     public function getToken(): string
     {
         $this->ensureToken();
-        return $_SESSION['csrf_token'];
+        $session = $this->getSession();
+        return $session->get('csrf_token');
     }
 
     private function ensureToken(): void
     {
-        if (empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        $session = $this->getSession();
+        if (!$session->has('csrf_token')) {
+            $session->set('csrf_token', bin2hex(random_bytes(32)));
         }
     }
 
     private function validate(string $token): bool
     {
-        if (empty($_SESSION['csrf_token']) || empty($token)) {
+        $session = $this->getSession();
+        $sessionToken = $session->get('csrf_token');
+
+        if (empty($sessionToken) || empty($token)) {
             return false;
         }
-        return hash_equals($_SESSION['csrf_token'], $token);
+        return hash_equals($sessionToken, $token);
+    }
+
+    private function getSession(): SessionInterface
+    {
+        if (isset($GLOBALS['corecart_container'])) {
+            return $GLOBALS['corecart_container']->get(SessionInterface::class);
+        }
+        throw new \RuntimeException('Session not available');
     }
 }

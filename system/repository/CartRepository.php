@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace CoreCart\System\Repository;
 
 use CoreCart\System\Engine\Database;
-use CoreCart\System\Entity\CartItem;
+use CoreCart\System\Infrastructure\InsufficientStockException;
 
 class CartRepository
 {
@@ -28,7 +28,7 @@ class CartRepository
             ['sid' => $sessionId]
         );
 
-        return array_map(CartItem::fromRow(...), $result);
+        return array_map(fn(array $row) => $row, $result);
     }
 
     public function findByCustomer(int $customerId): array
@@ -44,10 +44,10 @@ class CartRepository
             ['cid' => $customerId]
         );
 
-        return array_map(CartItem::fromRow(...), $result);
+        return array_map(fn(array $row) => $row, $result);
     }
 
-    public function findItem(int $cartId): ?CartItem
+    public function findItem(int $cartId): ?array
     {
         $result = $this->db->query(
             "SELECT c.cart_id, c.customer_id, c.session_id, c.product_id, c.quantity, c.date_added,
@@ -59,31 +59,38 @@ class CartRepository
             ['id' => $cartId]
         );
 
-        return !empty($result) ? CartItem::fromRow($result[0]) : null;
+        return !empty($result) ? $result[0] : null;
     }
 
-    public function findItemByProduct(string $sessionId, int $productId): ?CartItem
+    public function findItemByProductForSession(string $sessionId, int $productId): ?array
     {
         $result = $this->db->query(
-            "SELECT c.cart_id, c.customer_id, c.session_id, c.product_id, c.quantity, c.date_added,
-                    pd.name, p.price, p.image, p.quantity AS p_quantity
-             FROM cc_cart c
-             LEFT JOIN cc_product p ON (c.product_id = p.product_id)
-             LEFT JOIN cc_product_description pd ON (p.product_id = pd.product_id AND pd.language_id = 1)
+            "SELECT c.cart_id, c.quantity FROM cc_cart c
              WHERE c.session_id = :sid AND c.product_id = :pid AND c.customer_id IS NULL",
             ['sid' => $sessionId, 'pid' => $productId]
         );
 
-        return !empty($result) ? CartItem::fromRow($result[0]) : null;
+        return !empty($result) ? $result[0] : null;
     }
 
-    public function addItem(string $sessionId, int $productId, int $quantity = 1): int
+    public function findItemByProductForCustomer(int $customerId, int $productId): ?array
     {
-        $existing = $this->findItemByProduct($sessionId, $productId);
+        $result = $this->db->query(
+            "SELECT c.cart_id, c.quantity FROM cc_cart c
+             WHERE c.customer_id = :cid AND c.product_id = :pid",
+            ['cid' => $customerId, 'pid' => $productId]
+        );
+
+        return !empty($result) ? $result[0] : null;
+    }
+
+    public function addItem(string $sessionId, int $productId, int $quantity): int
+    {
+        $existing = $this->findItemByProductForSession($sessionId, $productId);
 
         if ($existing) {
-            $this->updateQuantity($existing->id, $existing->quantity + $quantity);
-            return $existing->id;
+            $this->updateQuantity((int) $existing['cart_id'], (int) $existing['quantity'] + $quantity);
+            return (int) $existing['cart_id'];
         }
 
         $this->db->execute(
@@ -94,16 +101,13 @@ class CartRepository
         return (int) $this->db->lastInsertId();
     }
 
-    public function addItemForCustomer(int $customerId, int $productId, int $quantity = 1): int
+    public function addItemForCustomer(int $customerId, int $productId, int $quantity): int
     {
-        $result = $this->db->query(
-            "SELECT cart_id, quantity FROM cc_cart WHERE customer_id = :cid AND product_id = :pid",
-            ['cid' => $customerId, 'pid' => $productId]
-        );
+        $existing = $this->findItemByProductForCustomer($customerId, $productId);
 
-        if (!empty($result)) {
-            $this->updateQuantity((int) $result[0]['cart_id'], (int) $result[0]['quantity'] + $quantity);
-            return (int) $result[0]['cart_id'];
+        if ($existing) {
+            $this->updateQuantity((int) $existing['cart_id'], (int) $existing['quantity'] + $quantity);
+            return (int) $existing['cart_id'];
         }
 
         $this->db->execute(
@@ -152,18 +156,15 @@ class CartRepository
         $merged = 0;
 
         foreach ($items as $item) {
-            $existing = $this->db->query(
-                "SELECT cart_id, quantity FROM cc_cart WHERE customer_id = :cid AND product_id = :pid",
-                ['cid' => $customerId, 'pid' => $item->productId]
-            );
+            $existing = $this->findItemByProductForCustomer($customerId, $item['product_id']);
 
-            if (!empty($existing)) {
-                $this->updateQuantity((int) $existing[0]['cart_id'], (int) $existing[0]['quantity'] + $item->quantity);
-                $this->removeItem($item->id);
+            if ($existing) {
+                $this->updateQuantity((int) $existing['cart_id'], (int) $existing['quantity'] + (int) $item['quantity']);
+                $this->removeItem((int) $item['cart_id']);
             } else {
                 $this->db->execute(
                     "UPDATE cc_cart SET customer_id = :cid, session_id = NULL WHERE cart_id = :id",
-                    ['cid' => $customerId, 'id' => $item->id]
+                    ['cid' => $customerId, 'id' => $item['cart_id']]
                 );
             }
             $merged++;

@@ -3,55 +3,35 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
+use CoreCart\System\Infrastructure\AuthenticatedUser;
+
 /**
- * HTTP Request object
+ * HTTP Request object — immutable value object
  *
- * Encapsulates all request data. Business logic must not use $_GET/$_POST/$_SERVER/$_SESSION directly.
+ * Business logic must not use $_GET/$_POST/$_SERVER/$_SESSION directly.
+ * Only Request::fromGlobals() reads superglobals.
  */
 class Request
 {
-    private string $method;
-    private string $path;
-    private array $queryParams;
-    private array $body;
-    private array $headers;
-    private array $cookies;
-    private array $files;
-    private ?array $user;
-    private string $requestId;
-    private string $ipAddress;
-    private ?string $contentType;
-    private int $contentLength;
-    private string $bodyRaw;
-
     public function __construct(
-        string $method = 'GET',
-        string $path = '/',
-        array $queryParams = [],
-        array $body = [],
-        array $headers = [],
-        array $cookies = [],
-        array $files = [],
-        ?array $user = null,
-        string $requestId = ''
-    ) {
-        $this->method = strtoupper($method);
-        $this->path = $path;
-        $this->queryParams = $queryParams;
-        $this->body = $body;
-        $this->headers = $headers;
-        $this->cookies = $cookies;
-        $this->files = $files;
-        $this->user = $user;
-        $this->requestId = $requestId ?: bin2hex(random_bytes(16));
-        $this->ipAddress = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        $this->contentType = $_SERVER['CONTENT_TYPE'] ?? null;
-        $this->contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
-        $this->bodyRaw = file_get_contents('php://input') ?: '';
-    }
+        public readonly string $method = 'GET',
+        public readonly string $path = '/',
+        public readonly array $queryParams = [],
+        public readonly array $body = [],
+        public readonly mixed $json = null,
+        public readonly array $headers = [],
+        public readonly array $cookies = [],
+        public readonly array $files = [],
+        public readonly ?AuthenticatedUser $user = null,
+        public readonly string $requestId = '',
+        public readonly string $ipAddress = '0.0.0.0',
+        public readonly ?string $contentType = null,
+        public readonly int $contentLength = 0,
+        public readonly string $rawBody = '',
+    ) {}
 
     /**
-     * Build a Request from superglobals (called once at bootstrap).
+     * Build a Request from superglobals. Called once at bootstrap.
      */
     public static function fromGlobals(): self
     {
@@ -62,34 +42,47 @@ class Request
         $files = $_FILES;
         $cookies = $_COOKIE;
         $headers = self::parseHeaders();
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? null;
+        $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        $rawBody = file_get_contents('php://input') ?: '';
 
         // Parse body
         $body = $_POST;
-        $rawBody = file_get_contents('php://input') ?: '';
-        if ($rawBody !== '' && !empty($_SERVER['CONTENT_TYPE'])) {
-            $ct = strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'])[0]));
+        $json = null;
+        if ($rawBody !== '' && $contentType !== null) {
+            $ct = strtolower(trim(explode(';', $contentType)[0]));
             if ($ct === 'application/json') {
                 $decoded = json_decode($rawBody, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                     $body = $decoded;
+                    $json = $decoded;
+                } elseif (json_last_error() === JSON_ERROR_NONE) {
+                    $json = $decoded;
                 }
             }
         }
 
-        $requestId = REQUEST_ID ?? bin2hex(random_bytes(16));
+        $requestId = defined('REQUEST_ID') ? REQUEST_ID : bin2hex(random_bytes(16));
 
         return new self(
-            method: $method,
+            method: strtoupper($method),
             path: $path,
             queryParams: $queryParams,
             body: $body,
+            json: $json,
             headers: $headers,
             cookies: $cookies,
             files: $files,
             user: null,
-            requestId: $requestId
+            requestId: $requestId,
+            ipAddress: $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0',
+            contentType: $contentType,
+            contentLength: $contentLength,
+            rawBody: $rawBody,
         );
     }
+
+    // --- Accessors for backward compatibility ---
 
     public function getMethod(): string
     {
@@ -121,14 +114,22 @@ class Request
         return $this->body[$key] ?? $default;
     }
 
-    public function getBodyRaw(): string
+    public function getJson(): mixed
     {
-        return $this->bodyRaw;
+        return $this->json;
     }
 
-    public function getHeaders(): array
+    public function getJsonValue(string $key, mixed $default = null): mixed
     {
-        return $this->headers;
+        if (!is_array($this->json)) {
+            return $default;
+        }
+        return $this->json[$key] ?? $default;
+    }
+
+    public function getBodyRaw(): string
+    {
+        return $this->rawBody;
     }
 
     public function getHeader(string $name, ?string $default = null): ?string
@@ -140,6 +141,11 @@ class Request
             }
         }
         return $default;
+    }
+
+    public function getHeaders(): array
+    {
+        return $this->headers;
     }
 
     public function getCookies(): array
@@ -157,14 +163,19 @@ class Request
         return $this->files;
     }
 
-    public function getUser(): ?array
+    public function getUploadedFile(string $key): ?array
+    {
+        return $this->files[$key] ?? null;
+    }
+
+    public function getUser(): ?AuthenticatedUser
     {
         return $this->user;
     }
 
     public function getUserId(): ?int
     {
-        return $this->user ? (int) ($this->user['id'] ?? 0) : null;
+        return $this->user?->id;
     }
 
     public function isLoggedIn(): bool
@@ -172,11 +183,50 @@ class Request
         return $this->user !== null;
     }
 
-    public function withUser(array $user): self
+    /**
+     * Return a new Request with the given user attached.
+     */
+    public function withUser(AuthenticatedUser $user): self
     {
-        $clone = clone $this;
-        $clone->user = $user;
-        return $clone;
+        return new self(
+            method: $this->method,
+            path: $this->path,
+            queryParams: $this->queryParams,
+            body: $this->body,
+            json: $this->json,
+            headers: $this->headers,
+            cookies: $this->cookies,
+            files: $this->files,
+            user: $user,
+            requestId: $this->requestId,
+            ipAddress: $this->ipAddress,
+            contentType: $this->contentType,
+            contentLength: $this->contentLength,
+            rawBody: $this->rawBody,
+        );
+    }
+
+    /**
+     * Return a new Request with replaced body (e.g. after JSON parse middleware).
+     */
+    public function withBody(array $body): self
+    {
+        return new self(
+            method: $this->method,
+            path: $this->path,
+            queryParams: $this->queryParams,
+            body: $body,
+            json: $this->json,
+            headers: $this->headers,
+            cookies: $this->cookies,
+            files: $this->files,
+            user: $this->user,
+            requestId: $this->requestId,
+            ipAddress: $this->ipAddress,
+            contentType: $this->contentType,
+            contentLength: $this->contentLength,
+            rawBody: $this->rawBody,
+        );
     }
 
     public function getRequestId(): string

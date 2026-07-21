@@ -19,21 +19,21 @@ class OrderController
 
     public function index(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
 
         $page = max(1, (int) $request->getQueryParam('page', 1));
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
-        $data = $orderService->getCustomerOrders((int) $customerId, $page);
+        $data = $orderService->getCustomerOrders($customerId, $page);
 
         return JsonResponse::success($data);
     }
 
     public function view(Request $request): Response
     {
-        $customerId = $_SESSION['customer_id'] ?? null;
+        $customerId = $request->getUserId();
         if (!$customerId) {
             return JsonResponse::error('Not logged in', 401);
         }
@@ -50,7 +50,7 @@ class OrderController
             return JsonResponse::error('Order not found', 404);
         }
 
-        if ($order->customerId !== (int) $customerId) {
+        if ($order->customerId !== $customerId) {
             return JsonResponse::error('Access denied', 403);
         }
 

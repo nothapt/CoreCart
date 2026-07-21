@@ -13,82 +13,95 @@ class AccountRouteProvider
             \CoreCart\System\Engine\SecurityHeaders::class,
         ];
 
-        $auth = [
+        $publicWithCsrf = [
             \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+        ];
+
+        $customerAuth = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CustomerAuthMiddleware::class,
+        ];
+
+        $customerMutation = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CustomerAuthMiddleware::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+            \CoreCart\System\Engine\RequestMiddleware::class,
         ];
 
         $router->addRoutes([
-            // Auth
+            // Auth (public, CSRF on POST)
             'account/login' => [
                 'controller' => \CoreCart\Account\Controller\AuthController::class,
                 'method'     => 'login',
-                'middleware'  => $public,
+                'middleware'  => $publicWithCsrf,
                 'methods'    => ['GET', 'POST'],
             ],
             'account/register' => [
                 'controller' => \CoreCart\Account\Controller\AuthController::class,
                 'method'     => 'register',
-                'middleware'  => $public,
+                'middleware'  => $publicWithCsrf,
                 'methods'    => ['GET', 'POST'],
             ],
             'account/logout' => [
                 'controller' => \CoreCart\Account\Controller\AuthController::class,
                 'method'     => 'logout',
-                'middleware'  => $public,
+                'middleware'  => $publicWithCsrf,
                 'methods'    => ['POST'],
             ],
 
-            // Profile
+            // Profile (authenticated)
             'account/profile' => [
                 'controller' => \CoreCart\Account\Controller\AccountController::class,
                 'method'     => 'profile',
-                'middleware'  => $auth,
+                'middleware'  => $customerAuth,
                 'methods'    => ['GET'],
             ],
             'account/password' => [
                 'controller' => \CoreCart\Account\Controller\AccountController::class,
                 'method'     => 'password',
-                'middleware'  => $auth,
+                'middleware'  => $customerMutation,
                 'methods'    => ['POST'],
             ],
 
-            // Addresses
+            // Addresses (authenticated, CSRF on mutations)
             'account/address' => [
                 'controller' => \CoreCart\Account\Controller\AddressController::class,
                 'method'     => 'index',
-                'middleware'  => $auth,
+                'middleware'  => $customerAuth,
                 'methods'    => ['GET'],
             ],
             'account/address/create' => [
                 'controller' => \CoreCart\Account\Controller\AddressController::class,
                 'method'     => 'create',
-                'middleware'  => $auth,
+                'middleware'  => $customerMutation,
                 'methods'    => ['GET', 'POST'],
             ],
             'account/address/edit' => [
                 'controller' => \CoreCart\Account\Controller\AddressController::class,
                 'method'     => 'edit',
-                'middleware'  => $auth,
+                'middleware'  => $customerMutation,
                 'methods'    => ['GET', 'POST'],
             ],
             'account/address/delete' => [
                 'controller' => \CoreCart\Account\Controller\AddressController::class,
                 'method'     => 'delete',
-                'middleware'  => $auth,
+                'middleware'  => $customerMutation,
                 'methods'    => ['POST'],
             ],
 
-            // Orders
+            // Orders (authenticated)
             'account/order' => [
                 'controller' => \CoreCart\Account\Controller\OrderController::class,
                 'method'     => 'index',
-                'middleware'  => $auth,
+                'middleware'  => $customerAuth,
                 'methods'    => ['GET'],
             ],
             'account/order/view' => [
                 'controller' => \CoreCart\Account\Controller\OrderController::class,
                 'method'     => 'view',
-                'middleware'  => $auth,
+                'middleware'  => $customerAuth,
                 'methods'    => ['GET'],
             ],
         ]);
