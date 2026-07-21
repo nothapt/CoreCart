@@ -4,16 +4,23 @@ declare(strict_types=1);
 namespace CoreCart\System\Engine;
 
 /**
- * Simple PSR-4 style router.
+ * Router with DI Container support
  *
  * Converts a route string like "catalog/product/view" into:
  *   - Class: \CoreCart\Catalog\Controller\ProductController
  *   - Method: view()
  *
- * If the class or method is not found, returns a 404 page.
+ * The Container is injected into every controller constructor.
  */
 class Router
 {
+    private Container $container;
+
+    public function __construct(Container $container)
+    {
+        $this->container = $container;
+    }
+
     /**
      * Dispatch a route string to the matching controller and method.
      */
@@ -21,16 +28,15 @@ class Router
     {
         $parts = array_filter(explode('/', trim($route, '/')));
 
-        // Determine which side: admin or catalog (default: catalog)
         $side = $parts[0] ?? 'catalog';
         $controllerName = $parts[1] ?? 'home';
         $methodName = $parts[2] ?? 'index';
 
-        // Build the fully-qualified class name
         $className = '\\CoreCart\\' . ucfirst($side) . '\\Controller\\' . ucfirst($controllerName) . 'Controller';
 
         if (class_exists($className)) {
-            $controller = new $className();
+            // Inject the container into the controller
+            $controller = new $className($this->container);
 
             if (method_exists($controller, $methodName)) {
                 $controller->$methodName();
@@ -38,7 +44,6 @@ class Router
             }
         }
 
-        // Nothing matched - send 404
         http_response_code(404);
         echo $this->render404($route);
     }
@@ -66,7 +71,7 @@ class Router
             <div class="box">
                 <h1>404</h1>
                 <p>Route <code>{$route}</code> was not found.</p>
-                <a href="/">Go back to首页</a>
+                <a href="/">Back to home</a>
             </div>
         </body>
         </html>

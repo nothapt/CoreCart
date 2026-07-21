@@ -5,7 +5,7 @@ declare(strict_types=1);
  * CoreCart - Admin Entry Point
  *
  * Separate entry for the admin panel.
- * Same bootstrap logic as the front-end, just different root path.
+ * Same DI bootstrap as the frontend.
  */
 
 define('DIR_ROOT', dirname(__DIR__));
@@ -26,7 +26,7 @@ if (file_exists(DIR_ROOT . '/.env')) {
     $dotenv->safeLoad();
 }
 
-// Same autoloader with Safe OCMOD support
+// Safe OCMOD autoloader
 spl_autoload_register(function (string $class): void {
     if (strpos($class, 'CoreCart\\') !== 0) {
         return;
@@ -55,6 +55,17 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
-$router = new \CoreCart\System\Engine\Router();
-$route = $_GET['route'] ?? 'admin/dashboard/index';
-$router->dispatch($route);
+// === Bootstrap DI Container ===
+$container = new \CoreCart\System\Engine\Container();
+
+$container->set(\CoreCart\System\Engine\Database::class, function () {
+    return new \CoreCart\System\Engine\Database(
+        $_ENV['DB_HOST'] ?? 'localhost',
+        $_ENV['DB_NAME'] ?? 'corecart',
+        $_ENV['DB_USER'] ?? 'root',
+        $_ENV['DB_PASS'] ?? ''
+    );
+});
+
+$router = new \CoreCart\System\Engine\Router($container);
+$router->dispatch($_GET['route'] ?? 'admin/product/index');

@@ -3,41 +3,33 @@ declare(strict_types=1);
 
 namespace CoreCart\Admin\Controller;
 
+use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\Database;
+use CoreCart\Catalog\Model\ProductModel;
+
 /**
  * Admin Product Controller
  *
- * Handles listing, creating, editing, and deleting products.
- * This is a demo controller to show how the admin panel works.
+ * Uses DI Container to access Database and models.
  */
 class ProductController
 {
+    private Container $container;
+
+    public function __construct(Container $container)
+    {
+        $this->container = $container;
+    }
+
     /**
      * Show the product list page.
      */
     public function index(): void
     {
-        // TODO: Fetch products from database
-        // $db = new \CoreCart\System\Engine\Database();
-        // $products = $db->query("SELECT * FROM product ORDER BY product_id DESC");
+        $db = $this->container->get(Database::class);
+        $productModel = new ProductModel($db);
 
-        $products = [
-            [
-                'product_id' => 1,
-                'name' => 'CorePhone 15 Pro',
-                'model' => 'CP-15-PRO',
-                'price' => '999.00',
-                'quantity' => 25,
-                'status' => 1,
-            ],
-            [
-                'product_id' => 2,
-                'name' => 'CoreBook Laptop 14"',
-                'model' => 'CB-14',
-                'price' => '1299.00',
-                'quantity' => 12,
-                'status' => 1,
-            ],
-        ];
+        $products = $productModel->getProducts(['limit' => 20]);
 
         include DIR_ADMIN . '/View/product/list.php';
     }
