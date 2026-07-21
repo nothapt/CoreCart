@@ -6,14 +6,12 @@ namespace CoreCart\System\Engine;
 /**
  * Middleware interface
  *
- * Implement this to create route middleware (auth, CSRF, rate-limiting, etc.).
- * The handle() method must call $next() to continue, or return a response
- * to stop the request chain.
+ * Receives a Request and a callable $next that returns a Response.
  */
 interface Middleware
 {
     /**
-     * @param callable $next  Call this to pass through to the next middleware/controller
+     * @param callable $next  Call this to pass through. Returns Response.
      */
-    public function handle(callable $next): void;
+    public function handle(Request $request, callable $next): Response;
 }

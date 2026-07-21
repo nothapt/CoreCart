@@ -3,51 +3,34 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
-/**
- * CSRF Protection Middleware
- *
- * Generates and validates CSRF tokens for admin POST/PUT/DELETE requests.
- */
 class CsrfMiddleware implements Middleware
 {
-    public function handle(callable $next): void
+    public function handle(Request $request, callable $next): Response
     {
-        // Only check on state-changing methods
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $method = $request->getMethod();
+
         if (!in_array($method, ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
-            // Generate token for forms
             $this->ensureToken();
-            $next();
-            return;
+            return $next($request);
         }
 
-        // Validate token
-        $token = $_POST['_csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $token = $request->getInput('_csrf_token')
+            ?? $request->getHeader('X-CSRF-Token')
+            ?? '';
+
         if (!$this->validate($token)) {
-            http_response_code(403);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(
-                ['error' => 'Invalid CSRF token'],
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-            );
-            return;
+            return new JsonResponse(['error' => 'Invalid CSRF token'], 403);
         }
 
-        $next();
+        return $next($request);
     }
 
-    /**
-     * Get or create the CSRF token for the current session.
-     */
     public function getToken(): string
     {
         $this->ensureToken();
         return $_SESSION['csrf_token'];
     }
 
-    /**
-     * Generate a new CSRF token if one doesn't exist.
-     */
     private function ensureToken(): void
     {
         if (empty($_SESSION['csrf_token'])) {
@@ -55,9 +38,6 @@ class CsrfMiddleware implements Middleware
         }
     }
 
-    /**
-     * Validate a submitted token against the session token.
-     */
     private function validate(string $token): bool
     {
         if (empty($_SESSION['csrf_token']) || empty($token)) {

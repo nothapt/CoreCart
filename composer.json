@@ -6,11 +6,17 @@
     "autoload": {
         "psr-4": {
             "CoreCart\\System\\Engine\\": "system/engine/",
-            "CoreCart\\System\\Library\\": "system/library/",
+            "CoreCart\\System\\Repository\\": "system/repository/",
+            "CoreCart\\System\\Service\\": "system/service/",
+            "CoreCart\\System\\Entity\\": "system/entity/",
+            "CoreCart\\System\\Dto\\": "system/dto/",
+            "CoreCart\\System\\Validator\\": "system/validator/",
+            "CoreCart\\System\\Route\\": "system/route/",
             "CoreCart\\Admin\\Controller\\": "admin/Controller/",
-            "CoreCart\\Admin\\Model\\": "admin/Model/",
             "CoreCart\\Catalog\\Controller\\": "catalog/Controller/",
-            "CoreCart\\Catalog\\Model\\": "catalog/Model/"
+            "CoreCart\\Cart\\Controller\\": "cart/Controller/",
+            "CoreCart\\Account\\Controller\\": "account/Controller/",
+            "CoreCart\\Checkout\\Controller\\": "checkout/Controller/"
         }
     },
     "require": {

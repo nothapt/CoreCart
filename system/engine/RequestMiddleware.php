@@ -3,70 +3,34 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Engine;
 
-/**
- * Request Validator Middleware
- *
- * Checks Content-Type for POST/PUT/PATCH requests.
- * Enforces max request body size.
- */
 class RequestMiddleware implements Middleware
 {
     private int $maxBodySize;
 
-    public function __construct(int $maxBodySize = 1048576) // 1MB default
+    public function __construct(int $maxBodySize = 1048576)
     {
         $this->maxBodySize = $maxBodySize;
     }
 
-    public function handle(callable $next): void
+    public function handle(Request $request, callable $next): Response
     {
-        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-
-        // Check body size
-        $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        $contentLength = $request->getContentLength();
         if ($contentLength > $this->maxBodySize) {
-            http_response_code(413);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(
-                ['error' => 'Request body too large'],
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-            );
-            return;
+            return new JsonResponse(['error' => 'Request body too large'], 413);
         }
 
-        // Check Content-Type for methods that should have a body
+        $method = $request->getMethod();
         if (in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
-            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-            $contentType = strtolower(trim(explode(';', $contentType)[0]));
-
-            $allowed = ['application/json', 'application/x-www-form-urlencoded', 'multipart/form-data'];
-            if ($contentType !== '' && !in_array($contentType, $allowed, true)) {
-                http_response_code(415);
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode(
-                    ['error' => 'Unsupported content type', 'allowed' => $allowed],
-                    JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-                );
-                return;
-            }
-
-            // Parse JSON body into $_POST if Content-Type is JSON
-            if ($contentType === 'application/json') {
-                $raw = file_get_contents('php://input');
-                $json = json_decode($raw, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    http_response_code(400);
-                    header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode(
-                        ['error' => 'Invalid JSON'],
-                        JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-                    );
-                    return;
+            $contentType = $request->getContentType();
+            if ($contentType !== null) {
+                $ct = strtolower(trim(explode(';', $contentType)[0]));
+                $allowed = ['application/json', 'application/x-www-form-urlencoded', 'multipart/form-data'];
+                if ($ct !== '' && !in_array($ct, $allowed, true)) {
+                    return new JsonResponse(['error' => 'Unsupported content type', 'allowed' => $allowed], 415);
                 }
-                $_POST = is_array($json) ? $json : [];
             }
         }
 
-        $next();
+        return $next($request);
     }
 }

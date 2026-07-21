@@ -89,6 +89,7 @@ set_exception_handler(function (\Throwable $e): void {
 $container = new \CoreCart\System\Engine\Container();
 $GLOBALS['corecart_container'] = $container;
 
+// Infrastructure
 $container->set(\CoreCart\System\Engine\Database::class, function () {
     return new \CoreCart\System\Engine\Database(
         $_ENV['DB_HOST'] ?? 'localhost',
@@ -98,58 +99,43 @@ $container->set(\CoreCart\System\Engine\Database::class, function () {
     );
 });
 
+// Repositories
+$container->set(\CoreCart\System\Repository\ProductRepository::class, fn($c) => new \CoreCart\System\Repository\ProductRepository($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Repository\CategoryRepository::class, fn($c) => new \CoreCart\System\Repository\CategoryRepository($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Repository\CartRepository::class, fn($c) => new \CoreCart\System\Repository\CartRepository($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Repository\OrderRepository::class, fn($c) => new \CoreCart\System\Repository\OrderRepository($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Repository\CustomerRepository::class, fn($c) => new \CoreCart\System\Repository\CustomerRepository($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Repository\AddressRepository::class, fn($c) => new \CoreCart\System\Repository\AddressRepository($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Repository\SettingRepository::class, fn($c) => new \CoreCart\System\Repository\SettingRepository($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Repository\AdminUserRepository::class, fn($c) => new \CoreCart\System\Repository\AdminUserRepository($c->get(\CoreCart\System\Engine\Database::class)));
+
+// Services
+$container->set(\CoreCart\System\Service\CatalogService::class, fn($c) => new \CoreCart\System\Service\CatalogService($c->get(\CoreCart\System\Repository\ProductRepository::class)));
+$container->set(\CoreCart\System\Service\CartService::class, fn($c) => new \CoreCart\System\Service\CartService($c->get(\CoreCart\System\Repository\CartRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class)));
+$container->set(\CoreCart\System\Service\OrderService::class, fn($c) => new \CoreCart\System\Service\OrderService($c->get(\CoreCart\System\Repository\OrderRepository::class), $c->get(\CoreCart\System\Repository\CartRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class), $c->get(\CoreCart\System\Repository\CustomerRepository::class)));
+$container->set(\CoreCart\System\Service\CustomerService::class, fn($c) => new \CoreCart\System\Service\CustomerService($c->get(\CoreCart\System\Repository\CustomerRepository::class), $c->get(\CoreCart\System\Repository\AddressRepository::class)));
+$container->set(\CoreCart\System\Service\CategoryService::class, fn($c) => new \CoreCart\System\Service\CategoryService($c->get(\CoreCart\System\Repository\CategoryRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class)));
+$container->set(\CoreCart\System\Service\DashboardService::class, fn($c) => new \CoreCart\System\Service\DashboardService($c->get(\CoreCart\System\Repository\AdminUserRepository::class), $c->get(\CoreCart\System\Repository\OrderRepository::class), $c->get(\CoreCart\System\Repository\CustomerRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class), $c->get(\CoreCart\System\Repository\CategoryRepository::class)));
+$container->set(\CoreCart\System\Service\SettingService::class, fn($c) => new \CoreCart\System\Service\SettingService($c->get(\CoreCart\System\Repository\SettingRepository::class)));
+
+// Middleware
 $container->set(\CoreCart\System\Engine\Validator::class, fn() => new \CoreCart\System\Engine\Validator());
 $container->set(\CoreCart\System\Engine\RateLimiter::class, fn($c) => new \CoreCart\System\Engine\RateLimiter($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Service\AuthService::class, fn($c) => new \CoreCart\System\Service\AuthService($c->get(\CoreCart\System\Repository\AdminUserRepository::class), $c->get(\CoreCart\System\Engine\RateLimiter::class)));
 $container->set(\CoreCart\System\Engine\AuthMiddleware::class, fn() => new \CoreCart\System\Engine\AuthMiddleware());
 $container->set(\CoreCart\System\Engine\CsrfMiddleware::class, fn() => new \CoreCart\System\Engine\CsrfMiddleware());
 $container->set(\CoreCart\System\Engine\SecurityHeaders::class, fn() => new \CoreCart\System\Engine\SecurityHeaders());
 $container->set(\CoreCart\System\Engine\RequestMiddleware::class, fn() => new \CoreCart\System\Engine\RequestMiddleware());
 
-// === Register Admin Routes ===
+// === Build Request ===
+$request = \CoreCart\System\Engine\Request::fromGlobals();
+
+// === Register Routes ===
 $router = new \CoreCart\System\Engine\Router($container);
 
-$publicMiddleware = [
-    \CoreCart\System\Engine\SecurityHeaders::class,
-];
+(new \CoreCart\System\Route\HealthRouteProvider())->register($router);
+(new \CoreCart\System\Route\AdminRouteProvider())->register($router);
 
-$authMiddleware = [
-    \CoreCart\System\Engine\AuthMiddleware::class,
-    \CoreCart\System\Engine\CsrfMiddleware::class,
-];
-
-$router->addRoutes([
-    // Public auth routes (no auth required)
-    'admin/auth/login' => [
-        'controller' => \CoreCart\Admin\Controller\AuthController::class,
-        'method'     => 'login',
-        'middleware'  => $publicMiddleware,
-        'methods'    => ['GET'],
-    ],
-    'admin/auth/loginPost' => [
-        'controller' => \CoreCart\Admin\Controller\AuthController::class,
-        'method'     => 'loginPost',
-        'middleware'  => array_merge($publicMiddleware, [\CoreCart\System\Engine\RequestMiddleware::class]),
-        'methods'    => ['POST'],
-    ],
-    'admin/auth/logout' => [
-        'controller' => \CoreCart\Admin\Controller\AuthController::class,
-        'method'     => 'logout',
-        'middleware'  => $publicMiddleware,
-        'methods'    => ['POST'],
-    ],
-    'admin/csrf-token' => [
-        'controller' => \CoreCart\Admin\Controller\AuthController::class,
-        'method'     => 'csrfToken',
-        'middleware'  => $authMiddleware,
-        'methods'    => ['GET'],
-    ],
-
-    // Protected admin routes
-    'admin/product/index' => [
-        'controller' => \CoreCart\Admin\Controller\ProductController::class,
-        'method'     => 'index',
-        'middleware'  => $authMiddleware,
-    ],
-]);
-
-$router->dispatchFromRequest();
+// === Dispatch ===
+$response = $router->dispatchFromRequest($request);
+$response->send();

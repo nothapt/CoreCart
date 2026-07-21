@@ -4,27 +4,19 @@ declare(strict_types=1);
 namespace CoreCart\System\Engine;
 
 /**
- * Router with route map, HTTP methods, middleware, and security checks
+ * Router with Request/Response support
  *
- * - Routes are registered explicitly (no dynamic class/method from URL)
- * - Only public methods, no methods starting with _
- * - HTTP method filtering (GET, POST, PUT, PATCH, DELETE)
- * - Middleware resolved via DI container
- * - Global exception handler with request ID
+ * - Routes are registered explicitly
+ * - HTTP method filtering
+ * - Middleware chain with Request/Response
+ * - Controllers receive Request, return Response
  */
 class Router
 {
     private Container $container;
 
     /**
-     * Route map: normalized path => route config
-     *
-     * @var array<string, array{
-     *     controller: string,
-     *     method: string,
-     *     middleware: string[],
-     *     methods: string[]
-     * }>
+     * @var array<string, array{controller: string, method: string, middleware: string[], methods: string[]}>
      */
     private array $routes = [];
 
@@ -33,15 +25,6 @@ class Router
         $this->container = $container;
     }
 
-    /**
-     * Register a route.
-     *
-     * @param string   $route       Route path, e.g. 'catalog/home/index'
-     * @param string   $controller  Fully-qualified controller class name
-     * @param string   $method      Method name on the controller
-     * @param string[] $middleware   Middleware class names to run first
-     * @param string[] $methods     Allowed HTTP methods (empty = all)
-     */
     public function addRoute(
         string $route,
         string $controller,
@@ -59,8 +42,6 @@ class Router
     }
 
     /**
-     * Register multiple routes at once.
-     *
      * @param array<string, array{controller: string, method: string, middleware?: string[], methods?: string[]}> $routes
      */
     public function addRoutes(array $routes): void
@@ -77,94 +58,94 @@ class Router
     }
 
     /**
-     * Dispatch a request. Extracts the route path from REQUEST_URI.
-     * Falls back to $_GET['route'] for entry-point access (e.g. /admin/index.php?route=...).
+     * Dispatch from the global Request. Returns a Response.
      */
-    public function dispatchFromRequest(): void
+    public function dispatchFromRequest(Request $request): Response
     {
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-        $path = parse_url($requestUri, PHP_URL_PATH) ?? '/';
+        $path = $request->getPath();
 
-        // If the URI path is an entry point file, use the route query param
-        if (preg_match('#/(index\.php)$#', $path) && isset($_GET['route'])) {
-            $this->dispatch($_GET['route']);
-            return;
+        // Entry-point fallback
+        if (preg_match('#/(index\.php)$#', $path)) {
+            $routeParam = $request->getQueryParam('route', '');
+            if ($routeParam !== '') {
+                return $this->dispatch($routeParam, $request);
+            }
         }
 
-        $this->dispatch($path);
+        return $this->dispatch($path, $request);
     }
 
     /**
-     * Dispatch a route string to the matching controller and method.
+     * Dispatch a route. Returns Response.
      */
-    public function dispatch(string $route): void
+    public function dispatch(string $route, Request $request): Response
     {
         $route = $this->normalizeRoute($route);
-        $httpMethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $httpMethod = $request->getMethod();
 
-        // Look up in route map
         if (!isset($this->routes[$route])) {
-            $this->respond404();
-            return;
+            return $this->errorResponse('Route not found', 404);
         }
 
         $config = $this->routes[$route];
 
-        // Check HTTP method
         if (!empty($config['methods']) && !in_array($httpMethod, $config['methods'], true)) {
-            $this->respond405($config['methods']);
-            return;
+            return $this->methodNotAllowedResponse($config['methods']);
         }
 
         $className = $config['controller'];
         $methodName = $config['method'];
 
-        // Security: method name validation
         if (!$this->isValidMethodName($methodName)) {
-            $this->respond404();
-            return;
+            return $this->errorResponse('Invalid method', 404);
         }
 
         if (!class_exists($className)) {
-            $this->respond404();
-            return;
+            return $this->errorResponse('Controller not found', 404);
         }
 
         $controller = new $className($this->container);
 
-        // Security: method must exist and be public
         if (!method_exists($controller, $methodName)) {
-            $this->respond404();
-            return;
+            return $this->errorResponse('Method not found', 404);
         }
 
         $reflection = new \ReflectionMethod($controller, $methodName);
         if (!$reflection->isPublic()) {
-            $this->respond404();
-            return;
+            return $this->errorResponse('Method not found', 404);
         }
 
-        // Run middleware chain, then the controller method
-        $this->runMiddleware($config['middleware'], function () use ($controller, $methodName) {
-            $controller->$methodName();
+        return $this->runMiddleware($config['middleware'], $request, function () use ($controller, $methodName, $request) {
+            $result = $controller->$methodName($request);
+            if ($result instanceof Response) {
+                return $result;
+            }
+            // If controller returns string, wrap in response
+            if (is_string($result)) {
+                $response = new Response();
+                $response->setBody($result);
+                $response->setHeader('Content-Type', 'text/html; charset=utf-8');
+                return $response;
+            }
+            return new JsonResponse(null);
         });
     }
 
     /**
-     * Run middleware in order, then call $final.
-     * Middleware is resolved via DI container and must implement Middleware.
+     * Run middleware chain. Returns Response.
      *
-     * @param string[] $middleware  Middleware class names
-     * @param callable $final      The controller action
+     * @param string[] $middleware
      */
-    private function runMiddleware(array $middleware, callable $final): void
+    private function runMiddleware(array $middleware, Request $request, callable $final): Response
     {
         if (empty($middleware)) {
-            $final();
-            return;
+            return $final();
         }
 
-        $chain = $final;
+        $chain = function () use ($final) {
+            return $final();
+        };
+
         foreach (array_reverse($middleware) as $mwClass) {
             $mw = $this->container->get($mwClass);
 
@@ -175,17 +156,14 @@ class Router
             }
 
             $prevChain = $chain;
-            $chain = function () use ($mw, $prevChain) {
-                $mw->handle($prevChain);
+            $chain = function () use ($mw, $prevChain, $request) {
+                return $mw->handle($request, $prevChain);
             };
         }
 
-        $chain();
+        return $chain();
     }
 
-    /**
-     * Normalize a route string: leading slash, no trailing slash, no double slashes.
-     */
     private function normalizeRoute(string $route): string
     {
         $route = strtok($route, '?');
@@ -193,44 +171,25 @@ class Router
         return preg_replace('#/+#', '/', $route);
     }
 
-    /**
-     * Validate that a method name is safe to call.
-     * Allows only [a-zA-Z0-9_], must not start with _.
-     */
     private function isValidMethodName(string $name): bool
     {
         return preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_]*$/', $name) === 1;
     }
 
-    /**
-     * Send a JSON 404 response.
-     */
-    private function respond404(): void
+    private function errorResponse(string $message, int $code): JsonResponse
     {
-        http_response_code(404);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(
-            ['error' => 'Route not found'],
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        return new JsonResponse(
+            ['error' => $message],
+            $code
         );
     }
 
-    /**
-     * Send a JSON 405 response with allowed methods.
-     *
-     * @param string[] $allowed  Allowed HTTP methods
-     */
-    private function respond405(array $allowed): void
+    private function methodNotAllowedResponse(array $allowed): JsonResponse
     {
-        http_response_code(405);
-        header('Content-Type: application/json; charset=utf-8');
-        header('Allow: ' . implode(', ', $allowed));
-        echo json_encode(
-            [
-                'error' => 'Method not allowed',
-                'allowed' => $allowed,
-            ],
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        return new JsonResponse(
+            ['error' => 'Method not allowed', 'allowed' => $allowed],
+            405,
+            ['Allow' => implode(', ', $allowed)]
         );
     }
 }

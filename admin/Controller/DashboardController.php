@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace CoreCart\Catalog\Controller;
+namespace CoreCart\Admin\Controller;
 
 use CoreCart\System\Engine\Container;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Engine\JsonResponse;
 
-class HomeController
+class DashboardController
 {
     private Container $container;
 
@@ -19,12 +19,9 @@ class HomeController
 
     public function index(Request $request): Response
     {
-        $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
-        $data = $catalogService->getActiveProducts(1, 5);
+        $dashboardService = $this->container->get(\CoreCart\System\Service\DashboardService::class);
+        $stats = $dashboardService->getStats();
 
-        return JsonResponse::success([
-            'engine'   => 'CoreCart',
-            'products' => $data['products'],
-        ]);
+        return JsonResponse::success($stats);
     }
 }
