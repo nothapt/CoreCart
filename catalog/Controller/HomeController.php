@@ -34,6 +34,6 @@ class HomeController
             'status'  => 'success',
             'engine'  => 'CoreCart MVP',
             'data'    => $products,
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 }
