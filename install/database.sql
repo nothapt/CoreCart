@@ -94,6 +94,6 @@ CREATE TABLE IF NOT EXISTS `cc_setting` (
 -- ==================================================
 -- Seed data: default language (English)
 -- ==================================================
-INSERT INTO `cc_language` (`language_id`, `code`, `name`, `locale`) VALUES
+INSERT IGNORE INTO `cc_language` (`language_id`, `code`, `name`, `locale`) VALUES
 (1, 'en', 'English', 'en_US.UTF-8'),
 (2, 'ru', 'Russian', 'ru_RU.UTF-8');
