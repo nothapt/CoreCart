@@ -1,11 +1,3 @@
--- ==================================================
--- CoreCart Database Schema
--- ==================================================
--- Prefix: cc_ (CoreCart)
--- Engine: InnoDB for foreign key support
--- Charset: utf8mb4 for full Unicode support
--- ==================================================
-
 -- 1. Products (hard data only: prices, stock, status)
 CREATE TABLE IF NOT EXISTS `cc_product` (
     `product_id` INT AUTO_INCREMENT PRIMARY KEY,
