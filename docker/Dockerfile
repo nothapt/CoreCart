@@ -8,9 +8,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/corecart
 
-# Install dependencies (if composer.json exists)
+# Install dependencies (fail build if this fails)
 COPY composer.json composer.lock* ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts 2>/dev/null || true
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Set working directory
 WORKDIR /var/www/corecart
