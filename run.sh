@@ -1,9 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "=================================================="
 echo "  CoreCart - Local Development Server"
-echo "=================================================="
 
 # Check PHP
 if ! command -v php &> /dev/null; then
@@ -28,5 +26,4 @@ fi
 
 echo "[OK] Starting server at http://localhost:8000"
 echo "[OK] Press Ctrl+C to stop"
-echo "=================================================="
 php -S localhost:8000 system/engine/router_builtin.php

@@ -1,7 +1,5 @@
 @echo off
-echo ==================================================
 echo  CoreCart - Local Development Server
-echo ==================================================
 echo.
 
 :: Check if Composer is installed
@@ -22,5 +20,5 @@ if not exist "vendor" (
 
 echo [OK] Starting server at http://localhost:8000
 echo [OK] Press Ctrl+C to stop
-echo ==================================================
+
 php -S localhost:8000 system/engine/router_builtin.php

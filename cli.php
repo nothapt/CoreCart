@@ -63,10 +63,10 @@ function runInstall(array $args): void
         $pdo->exec("USE `$dbName`");
         echo "  -> Database `$dbName` is ready." . PHP_EOL;
 
-        // 3. Create basic tables
-        echo "[3/4] Creating tables..." . PHP_EOL;
-        createTables($pdo);
-        echo "  -> Tables created." . PHP_EOL;
+        // 3. Import tables from install/database.sql
+        echo "[3/4] Importing database schema..." . PHP_EOL;
+        importSchema($pdo, DIR_ROOT . '/install/database.sql');
+        echo "  -> Tables created and seeded." . PHP_EOL;
 
         // 4. Write .env file
         echo "[4/4] Writing configuration..." . PHP_EOL;
@@ -96,71 +96,29 @@ function runInstall(array $args): void
 }
 
 /**
- * Create the core database tables.
+ * Import schema from an SQL file.
+ * Splits by semicolons and executes each statement.
  */
-function createTables(PDO $pdo): void
+function importSchema(PDO $pdo, string $sqlFile): void
 {
-    // Products table
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `product` (
-            `product_id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            `model` VARCHAR(64) NOT NULL DEFAULT '',
-            `name` VARCHAR(255) NOT NULL DEFAULT '',
-            `description` TEXT,
-            `price` DECIMAL(15,4) NOT NULL DEFAULT 0.0000,
-            `quantity` INT NOT NULL DEFAULT 0,
-            `status` TINYINT(1) NOT NULL DEFAULT 1,
-            `date_added` DATETIME DEFAULT CURRENT_TIMESTAMP,
-            `date_modified` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
+    if (!file_exists($sqlFile)) {
+        throw new \RuntimeException("SQL file not found: {$sqlFile}");
+    }
 
-    // Categories table
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `category` (
-            `category_id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            `name` VARCHAR(255) NOT NULL DEFAULT '',
-            `parent_id` INT UNSIGNED NOT NULL DEFAULT 0,
-            `sort_order` INT NOT NULL DEFAULT 0,
-            `status` TINYINT(1) NOT NULL DEFAULT 1
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
+    $sql = file_get_contents($sqlFile);
+    if ($sql === false) {
+        throw new \RuntimeException("Failed to read SQL file: {$sqlFile}");
+    }
 
-    // Users (admin + customers)
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `user` (
-            `user_id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            `username` VARCHAR(64) NOT NULL UNIQUE,
-            `password` VARCHAR(255) NOT NULL,
-            `email` VARCHAR(255) NOT NULL,
-            `group_id` INT UNSIGNED NOT NULL DEFAULT 1,
-            `status` TINYINT(1) NOT NULL DEFAULT 1,
-            `date_added` DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
+    // Remove SQL comments and split by semicolons
+    $sql = preg_replace('/--.*$/m', '', $sql);
+    $statements = array_filter(array_map('trim', explode(';', $sql)));
 
-    // Orders table
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `order` (
-            `order_id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            `user_id` INT UNSIGNED NOT NULL DEFAULT 0,
-            `status` TINYINT(1) NOT NULL DEFAULT 0,
-            `total` DECIMAL(15,4) NOT NULL DEFAULT 0.0000,
-            `comment` TEXT,
-            `date_added` DATETIME DEFAULT CURRENT_TIMESTAMP,
-            `date_modified` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
-
-    // Settings table (key-value store for configuration)
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `setting` (
-            `setting_id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            `key` VARCHAR(128) NOT NULL UNIQUE,
-            `value` TEXT,
-            `group` VARCHAR(64) NOT NULL DEFAULT 'config'
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ");
+    foreach ($statements as $statement) {
+        if (!empty($statement)) {
+            $pdo->exec($statement);
+        }
+    }
 }
 
 /**
