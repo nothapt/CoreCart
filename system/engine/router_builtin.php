@@ -8,17 +8,19 @@ declare(strict_types=1);
  * to simulate Nginx/Apache URL rewriting for local development.
  *
  * If the requested URI points to a real file (image, CSS, JS), serve it directly.
- * Otherwise, route everything through index.php.
+ * Otherwise, strip query string and route through index.php.
  */
 
 $uri = $_SERVER['REQUEST_URI'];
-$filePath = dirname(__DIR__, 2) . '/' . ltrim($uri, '/');
+$path = parse_url($uri, PHP_URL_PATH);
+$filePath = dirname(__DIR__, 2) . '/' . ltrim($path, '/');
 
 // Serve static files directly
 if (is_file($filePath)) {
     return false;
 }
 
-// Route dynamic requests through the main entry point
-$_GET['route'] = ltrim($uri, '/');
+// Route dynamic requests (strip query string to avoid polluting route)
+$route = ltrim($path, '/');
+$_GET['route'] = $route !== '' ? $route : 'catalog/home/index';
 require_once dirname(__DIR__, 2) . '/index.php';

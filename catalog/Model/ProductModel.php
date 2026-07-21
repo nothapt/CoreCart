@@ -9,15 +9,13 @@ use CoreCart\System\Engine\Model;
  * Product Model
  *
  * Handles all database queries related to products.
- * Uses the cc_product and cc_product_description tables.
+ * Composite operations use transactions.
  */
 class ProductModel extends Model
 {
     /**
      * Get a single product by ID with its description.
      *
-     * @param int $productId  The product to fetch
-     * @param int $languageId Language for the description (default: 1 = English)
      * @return array|null Product data or null if not found
      */
     public function getProduct(int $productId, int $languageId = 1): ?array
@@ -70,8 +68,6 @@ class ProductModel extends Model
     /**
      * Get products belonging to a specific category.
      *
-     * @param int   $categoryId
-     * @param array $data  Options: 'limit', 'offset'
      * @return array<int, array>
      */
     public function getProductsByCategory(int $categoryId, array $data = []): array
@@ -105,40 +101,45 @@ class ProductModel extends Model
     }
 
     /**
-     * Insert a new product. Returns the new product_id.
+     * Insert a new product with descriptions in a transaction.
+     *
+     * @param array $product     Product data (model, sku, price, quantity, image, status)
+     * @param array $description Descriptions keyed by language_id
+     * @return int The new product_id
      */
     public function addProduct(array $product, array $description): int
     {
-        $this->db->execute(
-            "INSERT INTO cc_product (model, sku, price, quantity, image, status)
-             VALUES (:model, :sku, :price, :quantity, :image, :status)",
-            [
-                'model'    => $product['model'],
-                'sku'      => $product['sku'] ?? null,
-                'price'    => $product['price'] ?? 0,
-                'quantity' => $product['quantity'] ?? 0,
-                'image'    => $product['image'] ?? null,
-                'status'   => $product['status'] ?? 1,
-            ]
-        );
-
-        $productId = (int) $this->db->lastInsertId();
-
-        // Insert description for each language
-        foreach ($description as $langId => $desc) {
-            $this->db->execute(
-                "INSERT INTO cc_product_description (product_id, language_id, name, description)
-                 VALUES (:product_id, :language_id, :name, :description)",
+        return $this->db->transaction(function ($db) use ($product, $description) {
+            $db->execute(
+                "INSERT INTO cc_product (model, sku, price, quantity, image, status)
+                 VALUES (:model, :sku, :price, :quantity, :image, :status)",
                 [
-                    'product_id'  => $productId,
-                    'language_id' => $langId,
-                    'name'        => $desc['name'],
-                    'description' => $desc['description'] ?? '',
+                    'model'    => $product['model'],
+                    'sku'      => $product['sku'] ?? null,
+                    'price'    => $product['price'] ?? 0,
+                    'quantity' => $product['quantity'] ?? 0,
+                    'image'    => $product['image'] ?? null,
+                    'status'   => $product['status'] ?? 1,
                 ]
             );
-        }
 
-        return $productId;
+            $productId = (int) $db->lastInsertId();
+
+            foreach ($description as $langId => $desc) {
+                $db->execute(
+                    "INSERT INTO cc_product_description (product_id, language_id, name, description)
+                     VALUES (:product_id, :language_id, :name, :description)",
+                    [
+                        'product_id'  => $productId,
+                        'language_id' => $langId,
+                        'name'        => $desc['name'],
+                        'description' => $desc['description'] ?? '',
+                    ]
+                );
+            }
+
+            return $productId;
+        });
     }
 
     /**

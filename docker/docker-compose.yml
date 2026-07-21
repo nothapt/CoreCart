@@ -6,10 +6,13 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ../:/var/www/corecart
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ../:/var/www/corecart:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - php
+      php:
+        condition: service_started
+    networks:
+      - corecart
 
   php:
     build:
@@ -18,18 +21,35 @@ services:
     volumes:
       - ../:/var/www/corecart
     working_dir: /var/www/corecart
+    environment:
+      - DB_HOST=db
+      - DB_NAME=corecart
+      - DB_USER=root
+      - DB_PASS=${DB_ROOT_PASSWORD:-secret}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - corecart
 
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
       MYSQL_DATABASE: corecart
-    ports:
-      - "3306:3306"
+    # No published port - only accessible via Docker network
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - corecart
+
+networks:
+  corecart:
 
 volumes:
   db_data:

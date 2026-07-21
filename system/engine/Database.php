@@ -7,7 +7,7 @@ namespace CoreCart\System\Engine;
  * Lightweight PDO wrapper for database operations.
  *
  * Uses prepared statements by default to prevent SQL injection.
- * All queries go through this single class.
+ * Supports transactions for composite operations.
  */
 class Database
 {
@@ -41,8 +41,6 @@ class Database
     /**
      * Run a SELECT query and return all matching rows.
      *
-     * @param string $sql  SQL query with named or positional placeholders
-     * @param array  $params  Bound parameters
      * @return array<int, array<string, mixed>>
      */
     public function query(string $sql, array $params = []): array
@@ -65,7 +63,7 @@ class Database
     }
 
     /**
-     * Get the last auto-incremented ID (useful after INSERT).
+     * Get the last auto-incremented ID.
      */
     public function lastInsertId(): string
     {
@@ -73,7 +71,52 @@ class Database
     }
 
     /**
-     * Return the raw PDO instance if you need advanced features.
+     * Begin a database transaction.
+     */
+    public function beginTransaction(): bool
+    {
+        return $this->pdo->beginTransaction();
+    }
+
+    /**
+     * Commit the current transaction.
+     */
+    public function commit(): bool
+    {
+        return $this->pdo->commit();
+    }
+
+    /**
+     * Roll back the current transaction.
+     */
+    public function rollBack(): bool
+    {
+        return $this->pdo->rollBack();
+    }
+
+    /**
+     * Execute a callback inside a transaction.
+     * Automatically commits on success, rolls back on exception.
+     *
+     * @template T
+     * @param callable(Database): T $callback
+     * @return T
+     */
+    public function transaction(callable $callback): mixed
+    {
+        $this->beginTransaction();
+        try {
+            $result = $callback($this);
+            $this->commit();
+            return $result;
+        } catch (\Throwable $e) {
+            $this->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Return the raw PDO instance.
      */
     public function getPdo(): \PDO
     {

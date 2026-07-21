@@ -15,12 +15,6 @@ define('DIR_LOGS', DIR_STORAGE . '/logs');
 
 require_once DIR_ROOT . '/vendor/autoload.php';
 
-// Load .env if present
-if (file_exists(DIR_ROOT . '/.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(DIR_ROOT);
-    $dotenv->safeLoad();
-}
-
 // Parse command-line arguments (--key=value)
 $args = [];
 foreach ($argv as $arg) {
@@ -38,6 +32,14 @@ match ($command) {
 };
 
 /**
+ * Validate a database name (alphanumeric + underscores only).
+ */
+function validateDbName(string $name): bool
+{
+    return preg_match('/^[a-zA-Z0-9_]+$/', $name) === 1;
+}
+
+/**
  * Run the installation process.
  */
 function runInstall(array $args): void
@@ -47,8 +49,13 @@ function runInstall(array $args): void
     $dbPass = $args['db_pass'] ?? '';
     $dbName = $args['db_name'] ?? 'corecart';
 
-    echo "=== CoreCart Installer ===" . PHP_EOL;
-    echo PHP_EOL;
+    echo "=== CoreCart Installer ===" . PHP_EOL . PHP_EOL;
+
+    // Validate database name
+    if (!validateDbName($dbName)) {
+        echo "[ERROR] Invalid database name: '{$dbName}'. Use only a-z, 0-9, underscores." . PHP_EOL;
+        exit(1);
+    }
 
     try {
         // 1. Test database connection
@@ -59,16 +66,17 @@ function runInstall(array $args): void
 
         // 2. Create database
         echo "[2/4] Creating database (if not exists)..." . PHP_EOL;
-        $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $stmt = $pdo->prepare("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $stmt->execute();
         $pdo->exec("USE `$dbName`");
-        echo "  -> Database `$dbName` is ready." . PHP_EOL;
+        echo "  -> Database `{$dbName}` is ready." . PHP_EOL;
 
         // 3. Import tables from install/database.sql
         echo "[3/4] Importing database schema..." . PHP_EOL;
         importSchema($pdo, DIR_ROOT . '/install/database.sql');
         echo "  -> Tables created and seeded." . PHP_EOL;
 
-        // 4. Write .env file
+        // 4. Write .env file with safe permissions
         echo "[4/4] Writing configuration..." . PHP_EOL;
         $envContent = <<<ENV
         DB_HOST=$dbHost
@@ -79,10 +87,16 @@ function runInstall(array $args): void
 
         APP_NAME=CoreCart
         APP_URL=http://localhost:8000
-        APP_DEBUG=true
+        APP_DEBUG=false
         ENV;
 
         file_put_contents(DIR_ROOT . '/.env', $envContent);
+
+        // Try to set restrictive permissions on .env (Unix only)
+        if (PHP_OS_FAMILY !== 'Windows') {
+            @chmod(DIR_ROOT . '/.env', 0600);
+        }
+
         echo "  -> .env file created." . PHP_EOL;
 
         echo PHP_EOL;
@@ -110,7 +124,7 @@ function importSchema(PDO $pdo, string $sqlFile): void
         throw new \RuntimeException("Failed to read SQL file: {$sqlFile}");
     }
 
-    // Remove SQL comments and split by semicolons
+    // Remove SQL comments, split by semicolons
     $sql = preg_replace('/--.*$/m', '', $sql);
     $statements = array_filter(array_map('trim', explode(';', $sql)));
 
