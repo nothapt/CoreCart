@@ -48,8 +48,18 @@ function runInstall(array $args): void
     $dbUser = $args['db_user'] ?? 'root';
     $dbPass = $args['db_pass'] ?? '';
     $dbName = $args['db_name'] ?? 'corecart';
+    $adminUser = $args['admin_user'] ?? 'admin';
+    $adminEmail = $args['admin_email'] ?? 'admin@example.com';
+    $adminPass = $args['admin_pass'] ?? 'admin123';
 
     echo "=== CoreCart Installer ===" . PHP_EOL . PHP_EOL;
+
+    // Check if already installed
+    if (file_exists(DIR_STORAGE . '/installed.lock')) {
+        echo "[ERROR] CoreCart is already installed." . PHP_EOL;
+        echo "Remove storage/installed.lock to reinstall." . PHP_EOL;
+        exit(1);
+    }
 
     // Validate database name
     if (!validateDbName($dbName)) {
@@ -59,25 +69,41 @@ function runInstall(array $args): void
 
     try {
         // 1. Test database connection
-        echo "[1/4] Testing database connection..." . PHP_EOL;
+        echo "[1/5] Testing database connection..." . PHP_EOL;
         $pdo = new PDO("mysql:host=$dbHost", $dbUser, $dbPass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         echo "  -> Connected successfully." . PHP_EOL;
 
         // 2. Create database
-        echo "[2/4] Creating database (if not exists)..." . PHP_EOL;
+        echo "[2/5] Creating database (if not exists)..." . PHP_EOL;
         $stmt = $pdo->prepare("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         $stmt->execute();
         $pdo->exec("USE `$dbName`");
         echo "  -> Database `{$dbName}` is ready." . PHP_EOL;
 
-        // 3. Import tables from install/database.sql
-        echo "[3/4] Importing database schema..." . PHP_EOL;
+        // 3. Import tables (skip admin_user seed, we'll create it properly)
+        echo "[3/5] Importing database schema..." . PHP_EOL;
         importSchema($pdo, DIR_ROOT . '/install/database.sql');
         echo "  -> Tables created and seeded." . PHP_EOL;
 
-        // 4. Write .env file with safe permissions
-        echo "[4/4] Writing configuration..." . PHP_EOL;
+        // 4. Create admin user with hashed password
+        echo "[4/5] Creating admin user..." . PHP_EOL;
+        $hash = password_hash($adminPass, PASSWORD_BCRYPT, ['cost' => 12]);
+        $stmt = $pdo->prepare(
+            "INSERT INTO cc_admin_user (username, email, password, status)
+             VALUES (:username, :email, :password, 1)
+             ON DUPLICATE KEY UPDATE password = :password2"
+        );
+        $stmt->execute([
+            'username'  => $adminUser,
+            'email'     => $adminEmail,
+            'password'  => $hash,
+            'password2' => $hash,
+        ]);
+        echo "  -> Admin user `{$adminUser}` created." . PHP_EOL;
+
+        // 5. Write .env and installed.lock
+        echo "[5/5] Writing configuration..." . PHP_EOL;
         $envContent = <<<ENV
         DB_HOST=$dbHost
         DB_NAME=$dbName
@@ -91,16 +117,21 @@ function runInstall(array $args): void
         ENV;
 
         file_put_contents(DIR_ROOT . '/.env', $envContent);
-
-        // Try to set restrictive permissions on .env (Unix only)
         if (PHP_OS_FAMILY !== 'Windows') {
             @chmod(DIR_ROOT . '/.env', 0600);
         }
 
-        echo "  -> .env file created." . PHP_EOL;
+        // Create installed.lock
+        file_put_contents(DIR_STORAGE . '/installed.lock', date('Y-m-d H:i:s') . PHP_EOL);
+        if (PHP_OS_FAMILY !== 'Windows') {
+            @chmod(DIR_STORAGE . '/installed.lock', 0400);
+        }
+
+        echo "  -> .env and installed.lock created." . PHP_EOL;
 
         echo PHP_EOL;
         echo "=== Installation complete! ===" . PHP_EOL;
+        echo "Admin: {$adminUser} / {$adminPass}" . PHP_EOL;
         echo "Run: php -S localhost:8000 system/engine/router_builtin.php" . PHP_EOL;
 
     } catch (PDOException $e) {
@@ -153,9 +184,12 @@ function printHelp(): void
       --db_user=root          Database user (default: root)
       --db_pass=              Database password (default: empty)
       --db_name=corecart      Database name (default: corecart)
+      --admin_user=admin      Admin username (default: admin)
+      --admin_email=admin@example.com  Admin email
+      --admin_pass=admin123   Admin password (default: admin123)
 
     Example:
-      php cli.php install --db_user=root --db_pass=secret --db_name=myshop
+      php cli.php install --db_user=root --db_pass=secret --db_name=myshop --admin_pass=mypassword
 
     HELP;
 }

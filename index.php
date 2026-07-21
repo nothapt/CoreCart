@@ -3,23 +3,27 @@ declare(strict_types=1);
 
 /**
  * CoreCart - Main Entry Point
- *
- * All frontend HTTP requests go through this file.
- * Bootstraps the engine, registers routes, and dispatches.
  */
 
-// Path constants
 define('DIR_ROOT', __DIR__);
 define('DIR_SYSTEM', DIR_ROOT . '/system');
 define('DIR_STORAGE', DIR_ROOT . '/storage');
 define('DIR_CACHE', DIR_STORAGE . '/cache');
 define('DIR_LOGS', DIR_STORAGE . '/logs');
 
-// Generate unique request ID for logging and debugging
 $requestId = bin2hex(random_bytes(16));
 define('REQUEST_ID', $requestId);
 
-// Start session
+// === Session Configuration ===
+ini_set('session.cookie_httponly', '1');
+ini_set('session.cookie_secure', (($_ENV['APP_DEBUG'] ?? 'false') === 'true') ? '0' : '1');
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.gc_maxlifetime', '7200');
+ini_set('session.cookie_lifetime', '0'); // Until browser closes
+ini_set('session.use_strict_mode', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.name', 'CCSESSID');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -33,16 +37,14 @@ if (file_exists(DIR_ROOT . '/.env')) {
     require_once DIR_ROOT . '/vendor/autoload.php';
 }
 
-// OCMOD autoloader (prepend, before Composer)
+// OCMOD autoloader (prepend)
 spl_autoload_register(function (string $class): void {
     if (strpos($class, 'CoreCart\\') !== 0) {
         return;
     }
-
     $relativePath = str_replace('\\', '/', substr($class, strlen('CoreCart\\'))) . '.php';
     $cacheFile = DIR_CACHE . '/modification/' . $relativePath;
     $originalFile = DIR_ROOT . '/system/' . $relativePath;
-
     if (file_exists($cacheFile)) {
         try {
             $code = file_get_contents($cacheFile);
@@ -57,7 +59,6 @@ spl_autoload_register(function (string $class): void {
             @unlink($cacheFile);
         }
     }
-
     if (file_exists($originalFile)) {
         require_once $originalFile;
     }
@@ -66,54 +67,27 @@ spl_autoload_register(function (string $class): void {
 // === Global Exception Handler ===
 register_shutdown_function(function (): void {
     $error = error_get_last();
-    if ($error === null) {
-        return;
-    }
-    // Only handle fatal errors
-    if (!in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+    if ($error === null || !in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
         return;
     }
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
-    $logFile = DIR_LOGS . '/errors.log';
-    $msg = sprintf(
-        "[%s] %s | %s in %s:%d%s",
-        date('Y-m-d H:i:s'),
-        REQUEST_ID,
-        $error['message'],
-        $error['file'],
-        $error['line'],
-        PHP_EOL
-    );
-    @file_put_contents($logFile, $msg, FILE_APPEND | LOCK_EX);
-    echo json_encode(
-        ['error' => 'Internal server error', 'request_id' => REQUEST_ID],
-        JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-    );
+    $msg = sprintf("[%s] %s | %s in %s:%d%s", date('Y-m-d H:i:s'), REQUEST_ID, $error['message'], $error['file'], $error['line'], PHP_EOL);
+    @file_put_contents(DIR_LOGS . '/errors.log', $msg, FILE_APPEND | LOCK_EX);
+    echo json_encode(['error' => 'Internal server error', 'request_id' => REQUEST_ID], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 });
 
 set_exception_handler(function (\Throwable $e): void {
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
-    $logFile = DIR_LOGS . '/errors.log';
-    $msg = sprintf(
-        "[%s] %s | %s in %s:%d%s",
-        date('Y-m-d H:i:s'),
-        REQUEST_ID,
-        $e->getMessage(),
-        $e->getFile(),
-        $e->getLine(),
-        PHP_EOL
-    );
-    @file_put_contents($logFile, $msg, FILE_APPEND | LOCK_EX);
-    echo json_encode(
-        ['error' => 'Internal server error', 'request_id' => REQUEST_ID],
-        JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-    );
+    $msg = sprintf("[%s] %s | %s in %s:%d%s", date('Y-m-d H:i:s'), REQUEST_ID, $e->getMessage(), $e->getFile(), $e->getLine(), PHP_EOL);
+    @file_put_contents(DIR_LOGS . '/errors.log', $msg, FILE_APPEND | LOCK_EX);
+    echo json_encode(['error' => 'Internal server error', 'request_id' => REQUEST_ID], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 });
 
 // === Bootstrap DI Container ===
 $container = new \CoreCart\System\Engine\Container();
+$GLOBALS['corecart_container'] = $container;
 
 $container->set(\CoreCart\System\Engine\Database::class, function () {
     return new \CoreCart\System\Engine\Database(
@@ -124,27 +98,39 @@ $container->set(\CoreCart\System\Engine\Database::class, function () {
     );
 });
 
-// Register middleware in DI container
-$container->set(\CoreCart\System\Engine\AuthMiddleware::class, function () {
-    return new \CoreCart\System\Engine\AuthMiddleware();
-});
-$container->set(\CoreCart\System\Engine\CsrfMiddleware::class, function () {
-    return new \CoreCart\System\Engine\CsrfMiddleware();
-});
+$container->set(\CoreCart\System\Engine\Validator::class, fn() => new \CoreCart\System\Engine\Validator());
+$container->set(\CoreCart\System\Engine\RateLimiter::class, fn($c) => new \CoreCart\System\Engine\RateLimiter($c->get(\CoreCart\System\Engine\Database::class)));
+$container->set(\CoreCart\System\Engine\AuthMiddleware::class, fn() => new \CoreCart\System\Engine\AuthMiddleware());
+$container->set(\CoreCart\System\Engine\CsrfMiddleware::class, fn() => new \CoreCart\System\Engine\CsrfMiddleware());
+$container->set(\CoreCart\System\Engine\SecurityHeaders::class, fn() => new \CoreCart\System\Engine\SecurityHeaders());
+$container->set(\CoreCart\System\Engine\RequestMiddleware::class, fn() => new \CoreCart\System\Engine\RequestMiddleware());
 
 // === Register Routes ===
 $router = new \CoreCart\System\Engine\Router($container);
+
+$publicMiddleware = [
+    \CoreCart\System\Engine\SecurityHeaders::class,
+];
 
 $router->addRoutes([
     '/' => [
         'controller' => \CoreCart\Catalog\Controller\HomeController::class,
         'method'     => 'index',
+        'middleware'  => $publicMiddleware,
     ],
     'catalog/home/index' => [
         'controller' => \CoreCart\Catalog\Controller\HomeController::class,
         'method'     => 'index',
+        'middleware'  => $publicMiddleware,
+    ],
+    'health/live' => [
+        'controller' => \CoreCart\System\Engine\HealthController::class,
+        'method'     => 'live',
+    ],
+    'health/ready' => [
+        'controller' => \CoreCart\System\Engine\HealthController::class,
+        'method'     => 'ready',
     ],
 ]);
 
-// Dispatch: extract route from REQUEST_URI (works with Nginx, Apache, PHP built-in server)
 $router->dispatchFromRequest();
