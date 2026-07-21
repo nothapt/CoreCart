@@ -1,0 +1,24 @@
+{
+    "name": "corecart/corecart",
+    "description": "Next-gen e-commerce platform built on clean PHP 8.4+",
+    "type": "project",
+    "license": "GPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "CoreCart\\System\\Engine\\": "system/engine/",
+            "CoreCart\\System\\Library\\": "system/library/",
+            "CoreCart\\Admin\\Controller\\": "admin/Controller/",
+            "CoreCart\\Admin\\Model\\": "admin/Model/",
+            "CoreCart\\Catalog\\Controller\\": "catalog/Controller/",
+            "CoreCart\\Catalog\\Model\\": "catalog/Model/"
+        }
+    },
+    "require": {
+        "php": ">=8.4",
+        "vlucas/phpdotenv": "^5.6",
+        "twig/twig": "^3.8"
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

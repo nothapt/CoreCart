@@ -1,0 +1,23 @@
+# Dependencies
+/vendor/
+
+# Environment config (contains DB credentials)
+.env
+
+# Storage (cache, logs, uploads)
+/storage/cache/
+/storage/logs/*.log
+/storage/uploads/
+
+# PHP built-in server download
+/php_core/
+/php.zip
+
+# Docker
+/docker/db_data/
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
