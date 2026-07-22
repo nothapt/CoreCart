@@ -13,41 +13,53 @@ class AdminRouteProvider
             \CoreCart\System\Engine\SecurityHeaders::class,
         ];
 
-        $auth = [
-            \CoreCart\System\Engine\AuthMiddleware::class,
+        $publicForm = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
             \CoreCart\System\Engine\CsrfMiddleware::class,
         ];
 
-        $authWithCsrf = [
+        $publicMutation = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+            \CoreCart\System\Engine\RequestMiddleware::class,
+        ];
+
+        $authenticated = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\AuthMiddleware::class,
+        ];
+
+        $authenticatedMutation = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
             \CoreCart\System\Engine\AuthMiddleware::class,
             \CoreCart\System\Engine\CsrfMiddleware::class,
             \CoreCart\System\Engine\RequestMiddleware::class,
         ];
 
         $router->addRoutes([
-            // Auth (login public, loginPost with rate limit)
+            // Auth
             'admin/auth/login' => [
                 'controller' => \CoreCart\Admin\Controller\AuthController::class,
                 'method'     => 'login',
-                'middleware'  => $public,
+                'middleware'  => $publicForm,
                 'methods'    => ['GET'],
             ],
             'admin/auth/loginPost' => [
                 'controller' => \CoreCart\Admin\Controller\AuthController::class,
                 'method'     => 'loginPost',
-                'middleware'  => array_merge($public, [\CoreCart\System\Engine\RequestMiddleware::class]),
+                'middleware'  => $publicMutation,
                 'methods'    => ['POST'],
             ],
             'admin/auth/logout' => [
                 'controller' => \CoreCart\Admin\Controller\AuthController::class,
                 'method'     => 'logout',
-                'middleware'  => $public,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
             'admin/csrf-token' => [
                 'controller' => \CoreCart\Admin\Controller\AuthController::class,
                 'method'     => 'csrfToken',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
 
@@ -55,7 +67,7 @@ class AdminRouteProvider
             'admin/dashboard' => [
                 'controller' => \CoreCart\Admin\Controller\DashboardController::class,
                 'method'     => 'index',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
 
@@ -63,25 +75,25 @@ class AdminRouteProvider
             'admin/product/index' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'index',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
             'admin/product/create' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'create',
-                'middleware'  => $authWithCsrf,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
             'admin/product/update' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'update',
-                'middleware'  => $authWithCsrf,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
             'admin/product/delete' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'delete',
-                'middleware'  => $authWithCsrf,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
 
@@ -89,25 +101,25 @@ class AdminRouteProvider
             'admin/category/index' => [
                 'controller' => \CoreCart\Admin\Controller\CategoryController::class,
                 'method'     => 'index',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
             'admin/category/create' => [
                 'controller' => \CoreCart\Admin\Controller\CategoryController::class,
                 'method'     => 'create',
-                'middleware'  => $authWithCsrf,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
             'admin/category/update' => [
                 'controller' => \CoreCart\Admin\Controller\CategoryController::class,
                 'method'     => 'update',
-                'middleware'  => $authWithCsrf,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
             'admin/category/delete' => [
                 'controller' => \CoreCart\Admin\Controller\CategoryController::class,
                 'method'     => 'delete',
-                'middleware'  => $authWithCsrf,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
 
@@ -115,19 +127,19 @@ class AdminRouteProvider
             'admin/order/index' => [
                 'controller' => \CoreCart\Admin\Controller\OrderController::class,
                 'method'     => 'index',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
             'admin/order/view' => [
                 'controller' => \CoreCart\Admin\Controller\OrderController::class,
                 'method'     => 'view',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
             'admin/order/updateStatus' => [
                 'controller' => \CoreCart\Admin\Controller\OrderController::class,
                 'method'     => 'updateStatus',
-                'middleware'  => $authWithCsrf,
+                'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
             ],
 
@@ -135,13 +147,13 @@ class AdminRouteProvider
             'admin/customer/index' => [
                 'controller' => \CoreCart\Admin\Controller\CustomerController::class,
                 'method'     => 'index',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
             'admin/customer/view' => [
                 'controller' => \CoreCart\Admin\Controller\CustomerController::class,
                 'method'     => 'view',
-                'middleware'  => $auth,
+                'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],
         ]);

@@ -53,7 +53,7 @@ class CartRouteProvider
             'cart/clear' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'clear',
-                'middleware'  => $optionalAuth,
+                'middleware'  => $withRequest,
                 'methods'    => ['POST'],
             ],
             'cart/count' => [

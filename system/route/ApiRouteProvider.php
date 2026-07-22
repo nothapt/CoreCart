@@ -24,6 +24,24 @@ class ApiRouteProvider
             \CoreCart\System\Engine\RequestMiddleware::class,
         ];
 
+        $optionalCustomer = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
+        ];
+
+        $optionalCustomerWithCsrf = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+        ];
+
+        $optionalCustomerMutation = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+            \CoreCart\System\Engine\RequestMiddleware::class,
+        ];
+
         $customerAuth = [
             \CoreCart\System\Engine\SecurityHeaders::class,
             \CoreCart\System\Engine\CustomerAuthMiddleware::class,
@@ -71,61 +89,61 @@ class ApiRouteProvider
                 'methods'    => ['GET'],
             ],
 
-            // Cart (public, CSRF on mutations)
+            // Cart (optional customer auth, CSRF on mutations)
             'api/cart' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'index',
-                'middleware'  => $public,
+                'middleware'  => $optionalCustomer,
                 'methods'    => ['GET'],
             ],
             'api/cart/add' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'add',
-                'middleware'  => $withRequest,
+                'middleware'  => $optionalCustomerMutation,
                 'methods'    => ['POST'],
             ],
             'api/cart/update' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'update',
-                'middleware'  => $withRequest,
+                'middleware'  => $optionalCustomerMutation,
                 'methods'    => ['POST'],
             ],
             'api/cart/remove' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'remove',
-                'middleware'  => $withRequest,
+                'middleware'  => $optionalCustomerMutation,
                 'methods'    => ['POST'],
             ],
             'api/cart/clear' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'clear',
-                'middleware'  => $withCsrf,
+                'middleware'  => $optionalCustomerMutation,
                 'methods'    => ['POST'],
             ],
             'api/cart/count' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'count',
-                'middleware'  => $public,
+                'middleware'  => $optionalCustomer,
                 'methods'    => ['GET'],
             ],
 
-            // Checkout (CSRF)
+            // Checkout (optional customer auth, CSRF on mutations)
             'api/checkout' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'index',
-                'middleware'  => $public,
+                'middleware'  => $optionalCustomer,
                 'methods'    => ['GET'],
             ],
             'api/checkout/confirm' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'confirm',
-                'middleware'  => $withCsrf,
+                'middleware'  => $optionalCustomerMutation,
                 'methods'    => ['POST'],
             ],
             'api/checkout/success' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'success',
-                'middleware'  => $public,
+                'middleware'  => $optionalCustomer,
                 'methods'    => ['GET'],
             ],
 
