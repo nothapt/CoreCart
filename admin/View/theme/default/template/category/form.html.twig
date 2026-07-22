@@ -1,40 +1,117 @@
 {% extends '@admin/layout/base.html.twig' %}
-{% block title %}{{ category.id is defined ? 'Edit' : 'Add' }} category — CoreCart Admin{% endblock %}
+
+{% set is_edit = category.id is defined and category.id > 0 %}
+
+{% block title %}{{ is_edit ? 'Edit category' : 'Add category' }} — CoreCart Admin{% endblock %}
+
 {% block content %}
-<div class="cc-page-header">
+<header class="cc-content-header">
     <div>
-        <h1>{{ category.id is defined ? 'Edit category' : 'New category' }}</h1>
-        {% if category.name is defined %}<p>{{ category.name }}</p>{% endif %}
+        <h1>{{ is_edit ? 'Edit category' : 'Add category' }}</h1>
+        <ol class="cc-breadcrumbs">
+            <li><svg class="cc-icon"><use href="#cc-i-home"></use></svg></li>
+            <li>Catalog</li>
+            <li><a href="/admin/category/index">Categories</a></li>
+            <li>{{ is_edit ? 'Edit' : 'Add' }}</li>
+        </ol>
     </div>
-    <div class="cc-flex cc-gap-2">
-        <a href="/admin/category/index" class="cc-btn cc-btn-secondary">Cancel</a>
-        <button type="submit" form="category-form" class="cc-btn cc-btn-primary">Save</button>
+
+    <div class="cc-content-actions">
+        <button type="submit" form="category-form" class="cc-btn cc-btn-primary" title="Save">
+            <svg class="cc-icon"><use href="#cc-i-save"></use></svg>
+        </button>
+        <a href="/admin/category/index" class="cc-btn" title="Back">
+            <svg class="cc-icon"><use href="#cc-i-back"></use></svg>
+        </a>
     </div>
+</header>
+
+<div class="cc-content">
+    <section class="cc-panel">
+        <div class="cc-panel-heading">
+            <svg class="cc-icon"><use href="#cc-i-edit"></use></svg>
+            {{ is_edit ? 'Editing category' : 'Creating category' }}
+        </div>
+
+        <div class="cc-panel-body">
+            <form id="category-form"
+                  method="post"
+                  action="/admin/category/{{ is_edit ? 'edit' : 'create' }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                {% if is_edit %}
+                    <input type="hidden" name="category_id" value="{{ category.id }}">
+                {% endif %}
+
+                <div data-tabs>
+                    <div class="cc-tabs">
+                        <button type="button"
+                                class="cc-tab-button active"
+                                data-tab-target="general">
+                            General
+                        </button>
+                        <button type="button"
+                                class="cc-tab-button"
+                                data-tab-target="data">
+                            Data
+                        </button>
+                        <button type="button"
+                                class="cc-tab-button"
+                                data-tab-target="design">
+                            Design
+                        </button>
+                    </div>
+
+                    <div class="cc-tab-pane active" data-tab-pane="general">
+                        <div class="cc-form-row">
+                            <label class="cc-label cc-label-required" for="name">Category name</label>
+                            <div>
+                                <input type="text"
+                                       id="name"
+                                       name="name"
+                                       class="cc-input"
+                                       value="{{ category.name|default('') }}"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cc-tab-pane" data-tab-pane="data">
+                        <div class="cc-form-row">
+                            <label class="cc-label" for="parent_id">Parent category ID</label>
+                            <div>
+                                <input type="number"
+                                       id="parent_id"
+                                       name="parent_id"
+                                       class="cc-input"
+                                       min="0"
+                                       value="{{ category.parentId|default(0) }}">
+                                <div class="cc-help">Use 0 for a root category.</div>
+                            </div>
+                        </div>
+
+                        <div class="cc-form-row">
+                            <label class="cc-label" for="status">Status</label>
+                            <div>
+                                <select id="status" name="status" class="cc-input">
+                                    <option value="1" {{ category.status|default(1) == 1 ? 'selected' : '' }}>
+                                        Enabled
+                                    </option>
+                                    <option value="0" {{ category.status|default(1) == 0 ? 'selected' : '' }}>
+                                        Disabled
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cc-tab-pane" data-tab-pane="design">
+                        <div class="cc-alert cc-alert-info">
+                            Layout assignment is intentionally not shown until layouts are implemented in CoreCart.
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
 </div>
-
-<form id="category-form" method="post" action="/admin/category/{{ category.id is defined ? 'edit' : 'create' }}">
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-    {% if category.id is defined %}
-        <input type="hidden" name="category_id" value="{{ category.id }}">
-    {% endif %}
-
-    <div class="cc-card cc-card-body">
-        <h3 class="cc-mb-4">General</h3>
-        <div class="cc-field">
-            <label class="cc-label" for="name">Name</label>
-            <input type="text" id="name" name="name" class="cc-input" value="{{ category.name|default('') }}" required>
-        </div>
-        <div class="cc-field">
-            <label class="cc-label" for="description">Description</label>
-            <textarea id="description" name="description" class="cc-input" rows="6">{{ category.description|default('') }}</textarea>
-        </div>
-        <div class="cc-field">
-            <label class="cc-label" for="status">Status</label>
-            <select id="status" name="status" class="cc-input">
-                <option value="1" {{ category.status|default(1) == 1 ? 'selected' : '' }}>Enabled</option>
-                <option value="0" {{ category.status|default(1) == 0 ? 'selected' : '' }}>Disabled</option>
-            </select>
-        </div>
-    </div>
-</form>
 {% endblock %}

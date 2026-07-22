@@ -3,72 +3,139 @@
 {% block title %}Dashboard — CoreCart Admin{% endblock %}
 
 {% block content %}
-<div class="cc-page-header">
-    <h1><i class="fa-solid fa-gauge"></i> Dashboard</h1>
-</div>
+<header class="cc-content-header">
+    <div>
+        <h1>Dashboard</h1>
+        <ol class="cc-breadcrumbs">
+            <li><svg class="cc-icon"><use href="#cc-i-home"></use></svg></li>
+            <li>Dashboard</li>
+        </ol>
+    </div>
+    <div class="cc-content-actions">
+        <a href="/admin/setting/index" class="cc-btn cc-btn-primary" title="Settings">
+            <svg class="cc-icon"><use href="#cc-i-settings"></use></svg>
+        </a>
+    </div>
+</header>
 
-<div class="cc-grid cc-grid-4">
-    <div class="cc-tile">
-        <div>
-            <div class="tile-title">Orders Today</div>
-            <div class="tile-value">{{ stats.orders_today|default(0) }}</div>
-        </div>
-        <div class="tile-icon"><i class="fa-solid fa-cart-shopping"></i></div>
-    </div>
-    <div class="cc-tile">
-        <div>
-            <div class="tile-title">Revenue Today</div>
-            <div class="tile-value">{{ stats.revenue_today|default('0.00') }} $</div>
-        </div>
-        <div class="tile-icon"><i class="fa-solid fa-dollar-sign"></i></div>
-    </div>
-    <div class="cc-tile">
-        <div>
-            <div class="tile-title">New Customers</div>
-            <div class="tile-value">{{ stats.customers_today|default(0) }}</div>
-        </div>
-        <div class="tile-icon"><i class="fa-solid fa-user-plus"></i></div>
-    </div>
-    <div class="cc-tile">
-        <div>
-            <div class="tile-title">Low Stock</div>
-            <div class="tile-value">{{ stats.low_stock|default(0) }}</div>
-        </div>
-        <div class="tile-icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
-    </div>
-</div>
+<div class="cc-content">
+    <div class="cc-dashboard-tiles">
+        <section class="cc-tile">
+            <div class="cc-tile-head">
+                <span>Orders today</span>
+                <span>0%</span>
+            </div>
+            <div class="cc-tile-body">
+                <svg class="cc-tile-icon cc-icon cc-icon-xl"><use href="#cc-i-cart"></use></svg>
+                <span class="cc-tile-value">{{ stats.orders_today|default(0) }}</span>
+            </div>
+            <a href="/admin/order/index" class="cc-tile-footer">View more...</a>
+        </section>
 
-<div class="cc-panel">
-    <div class="cc-panel-heading">
-        <i class="fa-solid fa-list"></i> Recent Orders
+        <section class="cc-tile">
+            <div class="cc-tile-head">
+                <span>Revenue today</span>
+                <span>0%</span>
+            </div>
+            <div class="cc-tile-body">
+                <svg class="cc-tile-icon cc-icon cc-icon-xl"><use href="#cc-i-credit-card"></use></svg>
+                <span class="cc-tile-value">{{ stats.revenue_today|default('0.00') }}</span>
+            </div>
+            <a href="/admin/order/index" class="cc-tile-footer">View more...</a>
+        </section>
+
+        <section class="cc-tile">
+            <div class="cc-tile-head">
+                <span>Customers</span>
+                <span>0%</span>
+            </div>
+            <div class="cc-tile-body">
+                <svg class="cc-tile-icon cc-icon cc-icon-xl"><use href="#cc-i-user"></use></svg>
+                <span class="cc-tile-value">{{ stats.customers_today|default(0) }}</span>
+            </div>
+            <a href="/admin/customer/index" class="cc-tile-footer">View more...</a>
+        </section>
+
+        <section class="cc-tile">
+            <div class="cc-tile-head">
+                <span>Low stock</span>
+                <span>0%</span>
+            </div>
+            <div class="cc-tile-body">
+                <svg class="cc-tile-icon cc-icon cc-icon-xl"><use href="#cc-i-box"></use></svg>
+                <span class="cc-tile-value">{{ stats.low_stock|default(0) }}</span>
+            </div>
+            <a href="/admin/product/index" class="cc-tile-footer">View more...</a>
+        </section>
     </div>
-    <div class="cc-panel-body">
-        {% if recent_orders is defined and recent_orders|length > 0 %}
-        <table class="cc-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Total</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in recent_orders %}
-                <tr>
-                    <td>#{{ order.id }}</td>
-                    <td>{{ order.customer_name|default('Guest') }}</td>
-                    <td><span class="cc-badge cc-badge-info">{{ order.status_label }}</span></td>
-                    <td>{{ order.total }} $</td>
-                    <td>{{ order.date_added }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-            <p class="cc-text-muted cc-text-center">No orders yet.</p>
-        {% endif %}
+
+    <div class="cc-dashboard-row">
+        <section class="cc-panel">
+            <div class="cc-panel-heading">
+                <svg class="cc-icon"><use href="#cc-i-refresh"></use></svg> Recent activity
+            </div>
+            <div class="cc-panel-body cc-panel-body-flush">
+                {% if recent_activity is defined and recent_activity|length > 0 %}
+                    {% for activity in recent_activity %}
+                        <div class="cc-activity-item">
+                            {{ activity.message }}
+                            <div class="cc-text-muted cc-text-sm">{{ activity.date }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="cc-empty">
+                        <div class="cc-empty-title">No recent activity</div>
+                        <p>Administrative events will appear here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="cc-panel">
+            <div class="cc-panel-heading">
+                <svg class="cc-icon"><use href="#cc-i-cart"></use></svg> Recent orders
+            </div>
+
+            {% if recent_orders is defined and recent_orders|length > 0 %}
+                <div class="cc-table-wrap">
+                    <table class="cc-table">
+                        <thead>
+                            <tr>
+                                <th class="cc-text-center">#</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Date added</th>
+                                <th class="cc-text-right">Total</th>
+                                <th class="cc-text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                                <tr>
+                                    <td class="cc-text-center">{{ order.id }}</td>
+                                    <td>{{ order.customer_name|default('Guest') }}</td>
+                                    <td>{{ order.status_label|default('Pending') }}</td>
+                                    <td>{{ order.date_added|default('—') }}</td>
+                                    <td class="cc-text-right">{{ order.total }} $</td>
+                                    <td class="cc-table-actions">
+                                        <a href="/admin/order/view?id={{ order.id }}"
+                                           class="cc-btn cc-btn-primary cc-btn-sm"
+                                           title="View">
+                                            <svg class="cc-icon"><use href="#cc-i-eye"></use></svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="cc-empty">
+                    <div class="cc-empty-title">No orders yet</div>
+                    <p>New orders will appear here.</p>
+                </div>
+            {% endif %}
+        </section>
     </div>
 </div>
 {% endblock %}

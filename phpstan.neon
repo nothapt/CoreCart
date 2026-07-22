@@ -7,6 +7,9 @@ parameters:
         - cart
         - account
         - checkout
+        - api
+        - index.php
+        - cli.php
     excludePaths:
         - vendor
         - storage

@@ -6,37 +6,36 @@ namespace CoreCart\System\View;
 use CoreCart\System\Infrastructure\SessionInterface;
 
 /**
- * Builds shared template context for admin controllers.
+ * Builds shared template context for administration pages.
  */
-class AdminContextProvider
+final class AdminContextProvider
 {
     public function __construct(
         private SessionInterface $session,
     ) {}
 
     /**
-     * Build the shared context array for any admin template.
-     *
      * @return array<string, mixed>
      */
     public function build(): array
     {
-        // Read and consume flash messages
-        $flashSuccess = $this->session->get('flash_success', '');
-        $flashError = $this->session->get('flash_error', '');
+        $flashSuccess = (string) $this->session->get('flash_success', '');
+        $flashError = (string) $this->session->get('flash_error', '');
+
         $this->session->remove('flash_success');
         $this->session->remove('flash_error');
 
-        // Ensure CSRF token exists
         if (!$this->session->has('csrf_token')) {
             $this->session->set('csrf_token', bin2hex(random_bytes(32)));
         }
 
         return [
-            'csrf_token'    => $this->session->get('csrf_token', ''),
-            'shop_name'     => 'CoreCart',
+            'csrf_token' => (string) $this->session->get('csrf_token', ''),
+            'shop_name' => 'CoreCart',
+            'admin_username' => (string) $this->session->get('admin_username', 'Administrator'),
+            'admin_email' => (string) $this->session->get('admin_email', ''),
             'flash_success' => $flashSuccess,
-            'flash_error'   => $flashError,
+            'flash_error' => $flashError,
         ];
     }
 }

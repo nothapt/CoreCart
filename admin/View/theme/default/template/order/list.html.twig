@@ -1,52 +1,89 @@
 {% extends '@admin/layout/base.html.twig' %}
+
 {% block title %}Orders — CoreCart Admin{% endblock %}
+
 {% block content %}
-<div class="cc-page-header">
+{% set status_labels = {0: 'Pending', 1: 'Processing', 2: 'Shipped', 3: 'Delivered', 9: 'Cancelled'} %}
+<header class="cc-content-header">
     <div>
         <h1>Orders</h1>
-        <p>Manage store orders.</p>
+        <ol class="cc-breadcrumbs">
+            <li><svg class="cc-icon"><use href="#cc-i-home"></use></svg></li>
+            <li>Sales</li>
+            <li>Orders</li>
+        </ol>
     </div>
-</div>
 
-{% if orders is defined and orders|length > 0 %}
-<table class="cc-table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Customer</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Date</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for order in orders %}
-        <tr>
-            <td>#{{ order.id }}</td>
-            <td>{{ order.customer_name|default('Guest') }}</td>
-            <td>{{ order.email|default('—') }}</td>
-            <td>
-                {% set badge_class = 'cc-badge-neutral' %}
-                {% if order.status == 1 %}{% set badge_class = 'cc-badge-info' %}
-                {% elseif order.status == 2 %}{% set badge_class = 'cc-badge-info' %}
-                {% elseif order.status == 3 %}{% set badge_class = 'cc-badge-success' %}
-                {% elseif order.status == 9 %}{% set badge_class = 'cc-badge-danger' %}
-                {% endif %}
-                <span class="cc-badge {{ badge_class }}">{{ order.status_label }}</span>
-            </td>
-            <td>{{ order.total }} $</td>
-            <td>{{ order.date_added }}</td>
-            <td><a href="/admin/order/view?id={{ order.id }}" class="cc-btn cc-btn-secondary">View</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-    {% include '@admin/common/empty-state.html.twig' with {
-        title: 'No orders',
-        message: 'Orders will appear here when customers start placing purchases.'
-    } %}
-{% endif %}
+    <div class="cc-content-actions">
+        <a href="/admin/order/index" class="cc-btn cc-btn-primary" title="Refresh orders">
+            <svg class="cc-icon"><use href="#cc-i-refresh"></use></svg>
+        </a>
+    </div>
+</header>
+
+<div class="cc-content">
+    <section class="cc-panel">
+        <div class="cc-panel-heading">
+            <svg class="cc-icon"><use href="#cc-i-list"></use></svg>
+            Order list
+        </div>
+
+        {% if orders is defined and orders|length > 0 %}
+            <div class="cc-table-wrap">
+                <table class="cc-table">
+                    <thead>
+                        <tr>
+                            <th class="cc-text-center" style="width:70px;">Order ID</th>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th class="cc-text-right">Total</th>
+                            <th>Date added</th>
+                            <th class="cc-text-right" style="width:85px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            {% set badge_class = 'cc-badge-neutral' %}
+                            {% if order.status == 0 %}
+                                {% set badge_class = 'cc-badge-warning' %}
+                            {% elseif order.status in [1, 2] %}
+                                {% set badge_class = 'cc-badge-info' %}
+                            {% elseif order.status == 3 %}
+                                {% set badge_class = 'cc-badge-success' %}
+                            {% elseif order.status == 9 %}
+                                {% set badge_class = 'cc-badge-danger' %}
+                            {% endif %}
+
+                            <tr>
+                                <td class="cc-text-center">#{{ order.id }}</td>
+                                <td>{{ order.customer_name|default('Guest') }}</td>
+                                <td>{{ order.customerEmail|default('—') }}</td>
+                                <td>
+                                    <span class="cc-badge {{ badge_class }}">
+                                        {{ status_labels[order.status]|default('Pending') }}
+                                    </span>
+                                </td>
+                                <td class="cc-text-right">{{ order.total }} $</td>
+                                <td>{{ order.dateAdded|default('—') }}</td>
+                                <td class="cc-table-actions">
+                                    <a href="/admin/order/view?id={{ order.id }}"
+                                       class="cc-btn cc-btn-primary cc-btn-sm"
+                                       title="View order">
+                                        <svg class="cc-icon"><use href="#cc-i-eye"></use></svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            {% include '@admin/common/empty-state.html.twig' with {
+                title: 'No orders',
+                message: 'Orders will appear here when customers start placing purchases.'
+            } %}
+        {% endif %}
+    </section>
+</div>
 {% endblock %}

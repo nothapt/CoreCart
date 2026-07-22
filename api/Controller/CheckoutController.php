@@ -7,6 +7,8 @@ use CoreCart\System\Engine\Container;
 use CoreCart\System\Engine\JsonResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
+use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\Service\CartService;
 use CoreCart\System\Service\OrderService;
 
 final class CheckoutController
@@ -20,22 +22,21 @@ final class CheckoutController
 
     public function index(Request $request): Response
     {
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
-        $cart = $this->container->get(\CoreCart\System\Service\CartService::class);
-        $items = $cart->getItems($sessionId, $customerId);
-        $total = $cart->getTotal($sessionId, $customerId);
+        $cart = $this->container->get(CartService::class);
+        $cartData = $cart->getCart($sessionId, $customerId);
 
         return JsonResponse::success([
-            'items' => $items,
-            'total' => $total,
+            'items' => $cartData['items'],
+            'total' => $cartData['total'],
         ]);
     }
 
     public function confirm(Request $request): Response
     {
         $body = $request->getBody();
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
 
         $dto = new \CoreCart\System\Dto\OrderCreateDTO(
@@ -68,7 +69,7 @@ final class CheckoutController
 
     public function success(Request $request): Response
     {
-        $orderId = (int) ($request->getQuery('order_id') ?? 0);
+        $orderId = (int) ($request->getQueryParam('order_id') ?? 0);
         if ($orderId <= 0) {
             return JsonResponse::error('Order ID is required', 400);
         }

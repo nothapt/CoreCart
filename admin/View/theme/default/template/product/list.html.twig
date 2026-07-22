@@ -1,53 +1,102 @@
 {% extends '@admin/layout/base.html.twig' %}
+
 {% block title %}Products — CoreCart Admin{% endblock %}
+
 {% block content %}
-<div class="cc-page-header">
+<header class="cc-content-header">
     <div>
         <h1>Products</h1>
-        <p>Manage catalog products.</p>
+        <ol class="cc-breadcrumbs">
+            <li><svg class="cc-icon"><use href="#cc-i-home"></use></svg></li>
+            <li>Catalog</li>
+            <li>Products</li>
+        </ol>
     </div>
-    <a href="/admin/product/create" class="cc-btn cc-btn-primary">Add product</a>
-</div>
 
-{% if products is defined and products|length > 0 %}
-<table class="cc-table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Product</th>
-            <th>Model</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Status</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for product in products %}
-        <tr>
-            <td>{{ product.id }}</td>
-            <td>{{ product.name }}</td>
-            <td>{{ product.model|default('—') }}</td>
-            <td>{{ product.price }} $</td>
-            <td>{{ product.quantity }}</td>
-            <td>
-                {% if product.status == 1 %}
-                    <span class="cc-badge cc-badge-success">Enabled</span>
-                {% else %}
-                    <span class="cc-badge cc-badge-neutral">Disabled</span>
-                {% endif %}
-            </td>
-            <td><a href="/admin/product/edit?id={{ product.id }}" class="cc-btn cc-btn-secondary">Edit</a></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-    {% include '@admin/common/empty-state.html.twig' with {
-        title: 'No products',
-        message: 'Add the first product to make it appear in the catalog.',
-        action_url: '/admin/product/create',
-        action_text: 'Add product'
-    } %}
-{% endif %}
+    <div class="cc-content-actions">
+        <a href="/admin/product/create" class="cc-btn cc-btn-primary" title="Add product">
+            <svg class="cc-icon"><use href="#cc-i-plus"></use></svg>
+        </a>
+        <a href="/admin/product/index" class="cc-btn" title="Refresh">
+            <svg class="cc-icon"><use href="#cc-i-refresh"></use></svg>
+        </a>
+    </div>
+</header>
+
+<div class="cc-content">
+    <section class="cc-panel">
+        <div class="cc-panel-heading">
+            <svg class="cc-icon"><use href="#cc-i-list"></use></svg>
+            Product list
+        </div>
+
+        {% if products is defined and products|length > 0 %}
+            <div class="cc-table-wrap">
+                <table class="cc-table">
+                    <thead>
+                        <tr>
+                            <th class="cc-text-center" style="width:55px;">ID</th>
+                            <th>Product</th>
+                            <th>Model</th>
+                            <th class="cc-text-right">Price</th>
+                            <th class="cc-text-right">Stock</th>
+                            <th>Status</th>
+                            <th class="cc-text-right" style="width:125px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td class="cc-text-center">{{ product.id }}</td>
+                                <td>
+                                    <a class="cc-table-product-name"
+                                       href="/admin/product/edit?id={{ product.id }}">
+                                        {{ product.name }}
+                                    </a>
+                                </td>
+                                <td>{{ product.model|default('—') }}</td>
+                                <td class="cc-text-right">{{ product.price }} $</td>
+                                <td class="cc-text-right">{{ product.quantity }}</td>
+                                <td>
+                                    {% if product.status == 1 %}
+                                        <span class="cc-badge cc-badge-success">Enabled</span>
+                                    {% else %}
+                                        <span class="cc-badge cc-badge-neutral">Disabled</span>
+                                    {% endif %}
+                                </td>
+                                <td class="cc-table-actions">
+                                    <a href="/admin/product/edit?id={{ product.id }}"
+                                       class="cc-btn cc-btn-primary cc-btn-sm"
+                                       title="Edit">
+                                        <svg class="cc-icon"><use href="#cc-i-edit"></use></svg>
+                                    </a>
+
+                                    <form method="post"
+                                          action="/admin/product/delete"
+                                          style="display:inline">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                                        <button type="submit"
+                                                class="cc-btn cc-btn-danger cc-btn-sm"
+                                                data-confirm="Delete this product?"
+                                                title="Delete">
+                                            <svg class="cc-icon"><use href="#cc-i-trash"></use></svg>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            {% include '@admin/common/empty-state.html.twig' with {
+                title: 'No products',
+                message: 'Add the first product to make it appear in the catalog.',
+                action_url: '/admin/product/create',
+                action_text: 'Add product'
+            } %}
+        {% endif %}
+    </section>
+</div>
 {% endblock %}

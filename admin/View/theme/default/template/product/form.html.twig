@@ -1,68 +1,137 @@
 {% extends '@admin/layout/base.html.twig' %}
-{% block title %}{{ product.id is defined ? 'Edit' : 'Add' }} product — CoreCart Admin{% endblock %}
+
+{% set is_edit = product.id is defined and product.id > 0 %}
+
+{% block title %}{{ is_edit ? 'Edit product' : 'Add product' }} — CoreCart Admin{% endblock %}
+
 {% block content %}
-<div class="cc-page-header">
+<header class="cc-content-header">
     <div>
-        <h1>{{ product.id is defined ? 'Edit product' : 'New product' }}</h1>
-        {% if product.name is defined %}<p>{{ product.name }}</p>{% endif %}
+        <h1>{{ is_edit ? 'Edit product' : 'Add product' }}</h1>
+        <ol class="cc-breadcrumbs">
+            <li><svg class="cc-icon"><use href="#cc-i-home"></use></svg></li>
+            <li>Catalog</li>
+            <li><a href="/admin/product/index">Products</a></li>
+            <li>{{ is_edit ? 'Edit' : 'Add' }}</li>
+        </ol>
     </div>
-    <div class="cc-flex cc-gap-2">
-        <a href="/admin/product/index" class="cc-btn cc-btn-secondary">Cancel</a>
-        <button type="submit" form="product-form" class="cc-btn cc-btn-primary">Save</button>
+
+    <div class="cc-content-actions">
+        <button type="submit" form="product-form" class="cc-btn cc-btn-primary" title="Save">
+            <svg class="cc-icon"><use href="#cc-i-save"></use></svg>
+        </button>
+        <a href="/admin/product/index" class="cc-btn" title="Back">
+            <svg class="cc-icon"><use href="#cc-i-back"></use></svg>
+        </a>
     </div>
+</header>
+
+<div class="cc-content">
+    <section class="cc-panel">
+        <div class="cc-panel-heading">
+            <svg class="cc-icon"><use href="#cc-i-edit"></use></svg>
+            {{ is_edit ? 'Editing product' : 'Creating product' }}
+        </div>
+
+        <div class="cc-panel-body">
+            <form id="product-form"
+                  method="post"
+                  action="/admin/product/{{ is_edit ? 'update' : 'create' }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+                {% if is_edit %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                {% endif %}
+
+                <div data-tabs>
+                    <div class="cc-tabs">
+                        <button type="button" class="cc-tab-button active" data-tab-target="general">
+                            General
+                        </button>
+                        <button type="button" class="cc-tab-button" data-tab-target="data">
+                            Data
+                        </button>
+                    </div>
+
+                    <div class="cc-tab-pane active" data-tab-pane="general">
+                        <div class="cc-form-row">
+                            <label class="cc-label cc-label-required" for="name">Product name</label>
+                            <div>
+                                <input type="text"
+                                       id="name"
+                                       name="name"
+                                       class="cc-input"
+                                       value="{{ product.name|default('') }}"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="cc-form-row">
+                            <label class="cc-label" for="description">Description</label>
+                            <div>
+                                <textarea id="description"
+                                          name="description"
+                                          class="cc-input"
+                                          rows="12">{{ product.description|default('') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cc-tab-pane" data-tab-pane="data">
+                        <div class="cc-form-row">
+                            <label class="cc-label" for="model">Model</label>
+                            <div>
+                                <input type="text"
+                                       id="model"
+                                       name="model"
+                                       class="cc-input"
+                                       value="{{ product.model|default('') }}">
+                            </div>
+                        </div>
+
+                        <div class="cc-form-row">
+                            <label class="cc-label cc-label-required" for="price">Price</label>
+                            <div>
+                                <input type="number"
+                                       id="price"
+                                       name="price"
+                                       class="cc-input"
+                                       value="{{ product.price|default('0') }}"
+                                       step="0.01"
+                                       min="0"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="cc-form-row">
+                            <label class="cc-label cc-label-required" for="quantity">Quantity</label>
+                            <div>
+                                <input type="number"
+                                       id="quantity"
+                                       name="quantity"
+                                       class="cc-input"
+                                       value="{{ product.quantity|default('0') }}"
+                                       min="0"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="cc-form-row">
+                            <label class="cc-label" for="status">Status</label>
+                            <div>
+                                <select id="status" name="status" class="cc-input">
+                                    <option value="1" {{ product.status|default(1) == 1 ? 'selected' : '' }}>
+                                        Enabled
+                                    </option>
+                                    <option value="0" {{ product.status|default(1) == 0 ? 'selected' : '' }}>
+                                        Disabled
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
 </div>
-
-<form id="product-form" method="post" action="/admin/product/{{ product.id is defined ? 'update' : 'create' }}">
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
-    {% if product.id is defined %}
-        <input type="hidden" name="product_id" value="{{ product.id }}">
-    {% endif %}
-
-    <div class="cc-form-grid">
-        <div>
-            <div class="cc-card cc-card-body cc-mb-4">
-                <h3 class="cc-mb-4">General</h3>
-                <div class="cc-field">
-                    <label class="cc-label" for="name">Name</label>
-                    <input type="text" id="name" name="name" class="cc-input" value="{{ product.name|default('') }}" required>
-                </div>
-                <div class="cc-field">
-                    <label class="cc-label" for="description">Description</label>
-                    <textarea id="description" name="description" class="cc-input" rows="6">{{ product.description|default('') }}</textarea>
-                </div>
-                <div class="cc-field">
-                    <label class="cc-label" for="model">Model</label>
-                    <input type="text" id="model" name="model" class="cc-input" value="{{ product.model|default('') }}">
-                </div>
-            </div>
-
-            <div class="cc-card cc-card-body">
-                <h3 class="cc-mb-4">Price and stock</h3>
-                <div class="cc-grid cc-grid-2">
-                    <div class="cc-field">
-                        <label class="cc-label" for="price">Price</label>
-                        <input type="number" id="price" name="price" class="cc-input" value="{{ product.price|default('0') }}" step="0.01" min="0" required>
-                    </div>
-                    <div class="cc-field">
-                        <label class="cc-label" for="quantity">Quantity</label>
-                        <input type="number" id="quantity" name="quantity" class="cc-input" value="{{ product.quantity|default('0') }}" min="0" required>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <div class="cc-card cc-card-body">
-                <h3 class="cc-mb-4">Status</h3>
-                <div class="cc-field">
-                    <label class="cc-label" for="status">Status</label>
-                    <select id="status" name="status" class="cc-input">
-                        <option value="1" {{ product.status|default(1) == 1 ? 'selected' : '' }}>Enabled</option>
-                        <option value="0" {{ product.status|default(1) == 0 ? 'selected' : '' }}>Disabled</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
 {% endblock %}

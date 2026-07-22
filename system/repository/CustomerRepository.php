@@ -18,7 +18,7 @@ class CustomerRepository
     public function findById(int $id): ?Customer
     {
         $result = $this->db->query(
-            "SELECT customer_id, username, email, status, date_added
+            "SELECT customer_id, username, firstname, lastname, email, status, date_added
              FROM cc_customer WHERE customer_id = :id",
             ['id' => $id]
         );
@@ -29,7 +29,7 @@ class CustomerRepository
     public function findByEmail(string $email): ?Customer
     {
         $result = $this->db->query(
-            "SELECT customer_id, username, email, status, date_added
+            "SELECT customer_id, username, firstname, lastname, email, status, date_added
              FROM cc_customer WHERE email = :email",
             ['email' => $email]
         );
@@ -40,7 +40,7 @@ class CustomerRepository
     public function findByName(string $username): ?Customer
     {
         $result = $this->db->query(
-            "SELECT customer_id, username, email, status, date_added
+            "SELECT customer_id, username, firstname, lastname, email, status, date_added
              FROM cc_customer WHERE username = :username",
             ['username' => $username]
         );
@@ -51,7 +51,7 @@ class CustomerRepository
     public function verifyPassword(string $email, string $password): ?array
     {
         $result = $this->db->query(
-            "SELECT customer_id, username, email, password, status
+            "SELECT customer_id, username, firstname, lastname, email, password, status
              FROM cc_customer WHERE email = :email AND status = 1",
             ['email' => $email]
         );
@@ -63,14 +63,16 @@ class CustomerRepository
         return $result[0];
     }
 
-    public function create(string $username, string $email, string $password): int
+    public function create(string $username, string $firstname, string $lastname, string $email, string $password): int
     {
         $this->db->execute(
-            "INSERT INTO cc_customer (username, email, password) VALUES (:username, :email, :password)",
+            "INSERT INTO cc_customer (username, firstname, lastname, email, password) VALUES (:username, :firstname, :lastname, :email, :password)",
             [
-                'username' => $username,
-                'email'    => $email,
-                'password' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
+                'username'  => $username,
+                'firstname' => $firstname,
+                'lastname'  => $lastname,
+                'email'     => $email,
+                'password'  => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
             ]
         );
 
@@ -105,7 +107,7 @@ class CustomerRepository
     public function findAll(int $limit = 20, int $offset = 0): array
     {
         $result = $this->db->query(
-            "SELECT customer_id, username, email, status, date_added
+            "SELECT customer_id, username, firstname, lastname, email, status, date_added
              FROM cc_customer
              ORDER BY customer_id DESC
              LIMIT " . (int) $limit . " OFFSET " . (int) $offset

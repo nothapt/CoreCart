@@ -9,7 +9,8 @@ namespace CoreCart\System\Dto;
 class RegisterDTO
 {
     public function __construct(
-        public readonly string $username,
+        public readonly string $firstname,
+        public readonly string $lastname,
         public readonly string $email,
         public readonly string $password,
     ) {}
@@ -17,7 +18,8 @@ class RegisterDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            username: trim($data['username'] ?? ''),
+            firstname: trim($data['firstname'] ?? ''),
+            lastname: trim($data['lastname'] ?? ''),
             email: trim($data['email'] ?? ''),
             password: $data['password'] ?? '',
         );

@@ -28,7 +28,7 @@ final class ProductController
 
     public function view(Request $request): Response
     {
-        $id = (int) ($request->getQuery('id') ?? 0);
+        $id = (int) ($request->getQueryParam('id') ?? 0);
         if ($id <= 0) {
             return JsonResponse::error('Product ID is required', 400);
         }
@@ -45,7 +45,7 @@ final class ProductController
 
     public function search(Request $request): Response
     {
-        $q = $request->getQuery('q') ?? '';
+        $q = $request->getQueryParam('q') ?? '';
         if ($q === '') {
             return JsonResponse::error('Search query is required', 400);
         }

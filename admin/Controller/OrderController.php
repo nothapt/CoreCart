@@ -10,6 +10,7 @@ use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Infrastructure\OrderStatus;
 use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\View\AdminContextProvider;
 use CoreCart\System\View\TemplateRendererInterface;
 
 class OrderController
@@ -34,18 +35,14 @@ class OrderController
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
         $data = $orderService->getOrders($page, 20, $status);
 
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $ctx = [
-            'orders'       => $data['orders'] ?? [],
-            'total'        => $data['total'] ?? 0,
-            'page'         => $data['page'] ?? 1,
-            'pages'        => $data['pages'] ?? 1,
-            'active_menu'  => 'order',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['orders'] = $data['orders'] ?? [];
+        $ctx['total'] = $data['total'] ?? 0;
+        $ctx['page'] = $data['page'] ?? 1;
+        $ctx['pages'] = $data['pages'] ?? 1;
+        $ctx['active_menu'] = 'order';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
@@ -66,45 +63,44 @@ class OrderController
             return new RedirectResponse('/admin/order/index');
         }
 
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $data = [
-            'order'        => $order,
-            'active_menu'  => 'order',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['order'] = $order;
+        $ctx['active_menu'] = 'order';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('order/view.html.twig', $data));
+        return new HtmlResponse($renderer->render('order/view.html.twig', $ctx));
     }
 
     public function updateStatus(Request $request): Response
     {
         $id = (int) $request->getInput('order_id', 0);
         $statusValue = (int) $request->getInput('status', 0);
+        $comment = $request->getInput('comment', '');
 
         if ($id <= 0) {
             return new RedirectResponse('/admin/order/index');
         }
 
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+        $csrfToken = $request->getInput('_csrf_token', '');
+        if ($csrfToken === '' || $csrfToken !== $session->get('csrf_token', '')) {
+            $session->set('flash_error', 'Invalid CSRF token');
+            return new RedirectResponse('/admin/order/view?id=' . $id);
+        }
+
         try {
             $status = OrderStatus::fromInt($statusValue);
             $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
-            $orderService->updateStatus($id, $status);
+            $orderService->updateStatus($id, $status, $comment);
 
-            /** @var SessionInterface $session */
-            $session = $this->container->get(SessionInterface::class);
             $session->set('flash_success', 'Order status updated');
         } catch (\InvalidArgumentException $e) {
-            /** @var SessionInterface $session */
-            $session = $this->container->get(SessionInterface::class);
             $session->set('flash_error', $e->getMessage());
         } catch (\RuntimeException $e) {
-            /** @var SessionInterface $session */
-            $session = $this->container->get(SessionInterface::class);
             $session->set('flash_error', $e->getMessage());
         }
 

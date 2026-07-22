@@ -108,6 +108,7 @@ $container->set(\CoreCart\System\View\TemplateRendererInterface::class, static f
 ));
 $container->set(\CoreCart\System\View\StorefrontContextProvider::class, static fn($c) => new \CoreCart\System\View\StorefrontContextProvider(
     $c->get(\CoreCart\System\Infrastructure\SessionInterface::class),
+    $c,
 ));
 
 // Middleware & Auth

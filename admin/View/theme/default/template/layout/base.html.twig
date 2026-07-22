@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
     <title>{% block title %}CoreCart Admin{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <link rel="stylesheet" href="{{ assets.css('admin-tokens.css') }}">
     <link rel="stylesheet" href="{{ assets.css('admin-base.css') }}">
     <link rel="stylesheet" href="{{ assets.css('admin-layout.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body class="cc-admin-body">
-    <div class="cc-admin-shell">
-        {% include '@admin/common/sidebar.html.twig' %}
-        <div class="cc-admin-main">
-            {% include '@admin/common/topbar.html.twig' %}
-            <div class="cc-admin-content">
-                {% include '@admin/common/flash.html.twig' %}
-                {% block content %}{% endblock %}
-            </div>
-        </div>
+    {% include '@admin/common/icons.html.twig' %}
+    {% include '@admin/common/topbar.html.twig' %}
+
+    <div class="cc-sidebar-overlay" data-sidebar-close></div>
+    {% include '@admin/common/sidebar.html.twig' %}
+
+    <div class="cc-main">
+        <main>
+            {% include '@admin/common/flash.html.twig' %}
+            {% block content %}{% endblock %}
+        </main>
     </div>
+
+    <script src="{{ assets.js('admin.js') }}"></script>
     {% block javascript %}{% endblock %}
 </body>
 </html>

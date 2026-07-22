@@ -1,75 +1,148 @@
 {% extends '@admin/layout/base.html.twig' %}
+
 {% block title %}Order #{{ order.id }} — CoreCart Admin{% endblock %}
+
 {% block content %}
-<div class="cc-page-header">
+{% set status_labels = {0: 'Pending', 1: 'Processing', 2: 'Shipped', 3: 'Delivered', 9: 'Cancelled'} %}
+<header class="cc-content-header">
     <div>
         <h1>Order #{{ order.id }}</h1>
-        <p>{{ order.date_added }}</p>
+        <ol class="cc-breadcrumbs">
+            <li><svg class="cc-icon"><use href="#cc-i-home"></use></svg></li>
+            <li>Sales</li>
+            <li><a href="/admin/order/index">Orders</a></li>
+            <li>#{{ order.id }}</li>
+        </ol>
     </div>
-    <a href="/admin/order/index" class="cc-btn cc-btn-secondary">Back to list</a>
-</div>
 
-<div class="cc-form-grid">
-    <div>
-        <div class="cc-card cc-card-body cc-mb-4">
-            <h3 class="cc-mb-4">Items</h3>
-            <table class="cc-table">
-                <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-                <tbody>
-                    {% for item in order.items %}
-                    <tr>
-                        <td>{{ item.name }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>{{ item.price }} $</td>
-                        <td>{{ item.total }} $</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="cc-content-actions">
+        <a href="/admin/order/index" class="cc-btn" title="Back">
+            <svg class="cc-icon"><use href="#cc-i-back"></use></svg>
+        </a>
     </div>
-    <div>
-        <div class="cc-card cc-card-body cc-mb-4">
-            <h3 class="cc-mb-4">Customer</h3>
-            <p class="cc-text-sm"><strong>Email:</strong> {{ order.email|default('—') }}</p>
-            <p class="cc-text-sm"><strong>Phone:</strong> {{ order.phone|default('—') }}</p>
-        </div>
-        <div class="cc-card cc-card-body cc-mb-4">
-            <h3 class="cc-mb-4">Shipping address</h3>
-            <p class="cc-text-sm">
-                {{ order.shipping_firstname|default('') }} {{ order.shipping_lastname|default('') }}<br>
-                {{ order.shipping_address_1|default('') }}<br>
-                {{ order.shipping_city|default('') }}, {{ order.shipping_postcode|default('') }}<br>
-                {{ order.shipping_country|default('') }}
-            </p>
-        </div>
-        <div class="cc-card cc-card-body">
-            <h3 class="cc-mb-4">Summary</h3>
-            <div class="cc-flex cc-justify-between cc-mb-2"><span class="cc-text-muted">Status:</span><span class="cc-badge cc-badge-info">{{ order.status_label }}</span></div>
-            <div class="cc-flex cc-justify-between cc-mb-2"><span class="cc-text-muted">Total:</span><strong>{{ order.total }} $</strong></div>
+</header>
+
+<div class="cc-content">
+    <div class="cc-detail-grid">
+        <div>
+            <section class="cc-panel">
+                <div class="cc-panel-heading">
+                    <svg class="cc-icon"><use href="#cc-i-box"></use></svg>
+                    Ordered products
+                </div>
+
+                <div class="cc-table-wrap">
+                    <table class="cc-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="cc-text-right">Quantity</th>
+                                <th class="cc-text-right">Price</th>
+                                <th class="cc-text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items|default([]) %}
+                                <tr>
+                                    <td>{{ item.name|default('Product') }}</td>
+                                    <td class="cc-text-right">{{ item.quantity|default(0) }}</td>
+                                    <td class="cc-text-right">{{ item.price|default('0.00') }} $</td>
+                                    <td class="cc-text-right">{{ item.getTotal() }} $</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="cc-text-center cc-text-muted">
+                                        No order products available.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 
-        <div class="cc-card cc-card-body cc-mt-4">
-            <h3 class="cc-mb-4">Update status</h3>
-            <form method="post" action="/admin/order/updateStatus">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
-                <input type="hidden" name="order_id" value="{{ order.id }}">
-                <div class="cc-field">
-                    <label class="cc-label" for="status">New status</label>
-                    <select id="status" name="status" class="cc-input">
-                        <option value="1">Pending</option>
-                        <option value="2">Processing</option>
-                        <option value="3">Shipped</option>
-                        <option value="4">Delivered</option>
-                        <option value="9">Cancelled</option>
-                    </select>
+        <div>
+            <section class="cc-panel">
+                <div class="cc-panel-heading">
+                    <svg class="cc-icon"><use href="#cc-i-user"></use></svg>
+                    Customer
                 </div>
-                <div class="cc-field">
-                    <label class="cc-label" for="comment">Comment</label>
-                    <textarea id="comment" name="comment" class="cc-input" rows="3"></textarea>
+                <div class="cc-panel-body">
+                    <div class="cc-summary-row">
+                        <span>Email</span>
+                        <strong>{{ order.customerEmail|default('—') }}</strong>
+                    </div>
+                    <div class="cc-summary-row">
+                        <span>Phone</span>
+                        <strong>{{ order.customerPhone|default('—') }}</strong>
+                    </div>
+                    <div class="cc-summary-row">
+                        <span>Date added</span>
+                        <strong>{{ order.dateAdded|default('—') }}</strong>
+                    </div>
                 </div>
-                <button type="submit" class="cc-btn cc-btn-primary">Update status</button>
-            </form>
+            </section>
+
+            <section class="cc-panel">
+                <div class="cc-panel-heading">
+                    <svg class="cc-icon"><use href="#cc-i-cart"></use></svg>
+                    Order summary
+                </div>
+                <div class="cc-panel-body">
+                    <div class="cc-summary-row">
+                        <span>Status</span>
+                        <span class="cc-badge cc-badge-info">
+                            {{ status_labels[order.status]|default('Pending') }}
+                        </span>
+                    </div>
+                    <div class="cc-summary-row">
+                        <span>Total</span>
+                        <strong>{{ order.total }} $</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="cc-panel">
+                <div class="cc-panel-heading">
+                    <svg class="cc-icon"><use href="#cc-i-refresh"></use></svg>
+                    Update status
+                </div>
+                <div class="cc-panel-body">
+                    <form method="post" action="/admin/order/updateStatus">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+
+                        <div class="cc-field">
+                            <label class="cc-label" for="status" style="text-align:left;padding-top:0;">
+                                New status
+                            </label>
+                            <select id="status" name="status" class="cc-input">
+                                <option value="0">Pending</option>
+                                <option value="1">Processing</option>
+                                <option value="2">Shipped</option>
+                                <option value="3">Delivered</option>
+                                <option value="9">Cancelled</option>
+                            </select>
+                        </div>
+
+                        <div class="cc-field">
+                            <label class="cc-label" for="comment" style="text-align:left;padding-top:0;">
+                                Comment
+                            </label>
+                            <textarea id="comment"
+                                      name="comment"
+                                      class="cc-input"
+                                      rows="4"></textarea>
+                        </div>
+
+                        <button type="submit" class="cc-btn cc-btn-primary">
+                            <svg class="cc-icon"><use href="#cc-i-save"></use></svg>
+                            Update status
+                        </button>
+                    </form>
+                </div>
+            </section>
         </div>
     </div>
 </div>

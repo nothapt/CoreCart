@@ -289,7 +289,7 @@ $params = [
         });
     }
 
-    public function updateStatus(int $id, OrderStatus $status): bool
+    public function updateStatus(int $id, OrderStatus $status, string $comment = ''): bool
     {
         $order = $this->orderRepo->findById($id);
         if (!$order) {
@@ -307,7 +307,7 @@ $params = [
             );
         }
 
-        return $this->orderRepo->updateStatus($id, $status);
+        return $this->orderRepo->updateStatus($id, $status, $comment);
     }
 
     public function cancelOrder(int $id, ?int $customerId = null): bool

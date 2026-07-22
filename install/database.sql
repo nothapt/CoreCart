@@ -102,6 +102,8 @@ CREATE TABLE IF NOT EXISTS `cc_product_to_category` (
 CREATE TABLE IF NOT EXISTS `cc_customer` (
     `customer_id` INT AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(64) NOT NULL UNIQUE,
+    `firstname` VARCHAR(128) NOT NULL DEFAULT '',
+    `lastname` VARCHAR(128) NOT NULL DEFAULT '',
     `email` VARCHAR(255) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
     `status` TINYINT(1) NOT NULL DEFAULT '1',

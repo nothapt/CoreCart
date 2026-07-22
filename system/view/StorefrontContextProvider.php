@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CoreCart\System\View;
 
+use CoreCart\System\Engine\Container;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Infrastructure\SessionInterface;
 
@@ -18,6 +19,7 @@ class StorefrontContextProvider
 {
     public function __construct(
         private SessionInterface $session,
+        private Container $container,
     ) {}
 
     /**
@@ -28,16 +30,20 @@ class StorefrontContextProvider
     public function build(Request $request): array
     {
         $userId = $request->getUserId();
-        $username = $userId ? $this->session->get('customer_username', '') : '';
+        $firstname = $userId ? $this->session->get('customer_firstname', '') : '';
+        $lastname = $userId ? $this->session->get('customer_lastname', '') : '';
         $email = $userId ? $this->session->get('customer_email', '') : '';
+        $username = $userId ? $this->session->get('customer_username', '') : '';
 
-        // Build a user-like object for templates: {{ app.user.username }}
+        // Build a user-like object for templates: {{ app.user.firstname }}
         $user = null;
         if ($userId) {
             $user = new \stdClass();
             $user->id = $userId;
-            $user->username = $username;
+            $user->firstname = $firstname;
+            $user->lastname = $lastname;
             $user->email = $email;
+            $user->username = $username;
         }
 
         // Build a request adapter for templates: {{ app.request.query.get('q') }}
@@ -62,6 +68,14 @@ class StorefrontContextProvider
             $this->session->set('csrf_token', bin2hex(random_bytes(32)));
         }
 
+        // Cart count for header badge
+        $cartCount = 0;
+        if ($this->container->has(\CoreCart\System\Service\CartService::class)) {
+            $sessionId = $this->session->getId();
+            $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);
+            $cartCount = $cartService->getCartCount($sessionId, $userId);
+        }
+
         return [
             'app' => (object) [
                 'user'    => $user,
@@ -71,6 +85,7 @@ class StorefrontContextProvider
             'shop_name'     => 'CoreCart',
             'flash_success' => $flashSuccess,
             'flash_error'   => $flashError,
+            'cart_count'    => $cartCount,
         ];
     }
 }

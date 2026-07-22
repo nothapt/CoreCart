@@ -1,0 +1,136 @@
+{% extends '@admin/layout/base.html.twig' %}
+
+{% block title %}Theme editor — CoreCart Admin{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+<style>
+    .CodeMirror {
+        height: 520px;
+        border: 1px solid #222;
+        font: 12px/1.45 Consolas, Monaco, monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="cc-content-header">
+    <div>
+        <h1>Theme editor</h1>
+        <ol class="cc-breadcrumbs">
+            <li><svg class="cc-icon"><use href="#cc-i-home"></use></svg></li>
+            <li>Design</li>
+            <li>Theme editor</li>
+        </ol>
+    </div>
+</header>
+
+<div class="cc-content">
+    <section class="cc-panel">
+        <div class="cc-panel-heading">
+            <svg class="cc-icon"><use href="#cc-i-list"></use></svg> Editing
+        </div>
+
+        <div class="cc-panel-body">
+            <div class="cc-alert cc-alert-info">
+                The editor only allows existing <strong>.twig</strong> files inside CoreCart theme directories.
+                A timestamped backup is created before every save.
+            </div>
+
+            <div class="cc-editor-layout">
+                <aside>
+                    <section class="cc-panel">
+                        <div class="cc-panel-heading">Choose theme area</div>
+                        <div class="cc-panel-body">
+                            <select class="cc-input"
+                                    onchange="window.location.href='/admin/design/theme-editor?area=' + encodeURIComponent(this.value)">
+                                <option value="catalog" {{ area == 'catalog' ? 'selected' : '' }}>Storefront</option>
+                                <option value="admin" {{ area == 'admin' ? 'selected' : '' }}>Administration</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <section class="cc-panel">
+                        <div class="cc-panel-heading">Choose template</div>
+                        <div class="cc-editor-file-list">
+                            {% for template_file in files %}
+                                <a href="/admin/design/theme-editor?{{ {
+                                    area: area,
+                                    file: template_file
+                                }|url_encode }}"
+                                   class="{{ template_file == selected_file ? 'active' : '' }}">
+                                    <span>{{ template_file }}</span>
+                                    <svg class="cc-icon"><use href="#cc-i-chevron"></use></svg>
+                                </a>
+                            {% else %}
+                                <div class="cc-empty">No Twig templates found.</div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </aside>
+
+                <section>
+                    {% if selected_file %}
+                        <form method="post" action="/admin/design/theme-editor">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="area" value="{{ area }}">
+                            <input type="hidden" name="file" value="{{ selected_file }}">
+
+                            <div class="cc-editor-toolbar">
+                                <strong>{{ selected_file }}</strong>
+                                <div class="cc-flex cc-gap-2">
+                                    <button type="submit"
+                                            name="action"
+                                            value="save"
+                                            class="cc-btn cc-btn-primary">
+                                        <svg class="cc-icon"><use href="#cc-i-save"></use></svg> Save
+                                    </button>
+                                    <button type="submit"
+                                            name="action"
+                                            value="reset"
+                                            class="cc-btn cc-btn-danger"
+                                            data-confirm="Restore the latest backup for this template?">
+                                        <svg class="cc-icon"><use href="#cc-i-refresh"></use></svg> Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea id="theme-code"
+                                      name="content"
+                                      class="cc-editor-textarea"
+                                      spellcheck="false">{{ content }}</textarea>
+                        </form>
+                    {% else %}
+                        <div class="cc-empty">
+                            <div class="cc-empty-title">Select a template</div>
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/twig/twig.min.js"></script>
+<script>
+    const textarea = document.getElementById('theme-code');
+    if (textarea && window.CodeMirror) {
+        CodeMirror.fromTextArea(textarea, {
+            mode: 'twig',
+            theme: 'monokai',
+            lineNumbers: true,
+            lineWrapping: false,
+            indentUnit: 4,
+            tabSize: 4
+        });
+    }
+</script>
+{% endblock %}

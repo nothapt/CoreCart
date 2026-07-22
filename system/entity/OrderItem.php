@@ -17,6 +17,11 @@ class OrderItem
         public readonly string $price = '0.0000',
     ) {}
 
+    public function getTotal(): string
+    {
+        return (string) bcmul($this->price, (string) $this->quantity, 4);
+    }
+
     public function toArray(): array
     {
         return [

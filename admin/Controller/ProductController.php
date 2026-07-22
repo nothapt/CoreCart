@@ -9,6 +9,7 @@ use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\View\AdminContextProvider;
 use CoreCart\System\View\TemplateRendererInterface;
 
 class ProductController
@@ -23,18 +24,14 @@ class ProductController
         $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
         $data = $catalogService->getAllProducts($page);
 
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $ctx = [
-            'products'     => $data['products'] ?? [],
-            'total'        => $data['total'] ?? 0,
-            'page'         => $data['page'] ?? 1,
-            'pages'        => $data['pages'] ?? 1,
-            'active_menu'  => 'product',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['products'] = $data['products'] ?? [];
+        $ctx['total'] = $data['total'] ?? 0;
+        $ctx['page'] = $data['page'] ?? 1;
+        $ctx['pages'] = $data['pages'] ?? 1;
+        $ctx['active_menu'] = 'product';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
@@ -43,19 +40,15 @@ class ProductController
 
     public function create(Request $request): Response
     {
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $data = [
-            'product'      => [],
-            'active_menu'  => 'product',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['product'] = [];
+        $ctx['active_menu'] = 'product';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('product/form.html.twig', $data));
+        return new HtmlResponse($renderer->render('product/form.html.twig', $ctx));
     }
 
     public function createPost(Request $request): Response
@@ -96,19 +89,15 @@ class ProductController
             return new RedirectResponse('/admin/product/index');
         }
 
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $data = [
-            'product'      => $product,
-            'active_menu'  => 'product',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['product'] = $product;
+        $ctx['active_menu'] = 'product';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('product/form.html.twig', $data));
+        return new HtmlResponse($renderer->render('product/form.html.twig', $ctx));
     }
 
     public function update(Request $request): Response

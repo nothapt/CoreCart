@@ -1,52 +1,40 @@
-/* CoreCart Admin Design Tokens — OpenCart Style */
+/* CoreCart Admin — OpenCart Classic tokens */
 :root {
-    --cc-admin-sidebar: #272d3b;
-    --cc-admin-sidebar-hover: #2e3546;
-    --cc-admin-sidebar-active: #2e3546;
-    --cc-admin-sidebar-text: #a6b1cf;
-    --cc-admin-sidebar-text-active: #ffffff;
-    --cc-admin-sidebar-width: 240px;
-    --cc-admin-topbar-height: 50px;
+    --cc-header-height: 64px;
+    --cc-sidebar-width: 260px;
 
-    --cc-color-primary: #0d6efd;
-    --cc-color-primary-hover: #0b5ed7;
-    --cc-color-primary-focus: rgba(13, 110, 253, 0.15);
-    --cc-color-text: #555555;
-    --cc-color-text-muted: #888888;
-    --cc-color-text-inverse: #ffffff;
-    --cc-color-background: #f4f6f9;
-    --cc-color-surface: #ffffff;
-    --cc-color-border: #e9ecef;
-    --cc-color-success: #198754;
-    --cc-color-warning: #ffc107;
-    --cc-color-danger: #dc3545;
-    --cc-color-info: #0dcaf0;
+    --cc-blue: #1e91cf;
+    --cc-blue-dark: #1878ad;
+    --cc-blue-light: #38a5dd;
 
-    --cc-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --cc-font-size-xs: 11px;
-    --cc-font-size-sm: 13px;
-    --cc-font-size-base: 14px;
-    --cc-font-size-lg: 16px;
-    --cc-font-size-xl: 18px;
-    --cc-font-size-2xl: 20px;
-    --cc-font-size-3xl: 24px;
-    --cc-font-size-4xl: 30px;
-    --cc-line-height-tight: 1.3;
-    --cc-line-height-normal: 1.5;
-    --cc-font-weight-normal: 400;
-    --cc-font-weight-medium: 500;
-    --cc-font-weight-semibold: 600;
-    --cc-font-weight-bold: 700;
+    --cc-sidebar: #242d37;
+    --cc-sidebar-dark: #19222d;
+    --cc-sidebar-active: #17212b;
+    --cc-sidebar-submenu: #2b3545;
+    --cc-sidebar-border: #303b47;
+    --cc-sidebar-text: #c1ced7;
+    --cc-sidebar-muted: #90a1b4;
 
-    --cc-space-1: 4px;
-    --cc-space-2: 8px;
-    --cc-space-3: 12px;
-    --cc-space-4: 15px;
-    --cc-space-6: 20px;
-    --cc-space-8: 24px;
-    --cc-radius-sm: 4px;
-    --cc-radius-md: 4px;
-    --cc-radius-full: 999px;
-    --cc-shadow-sm: none;
-    --cc-transition-fast: 0.2s ease;
+    --cc-page-bg: #f6f6f6;
+    --cc-surface: #ffffff;
+    --cc-heading-bg: #f5f5f5;
+    --cc-border: #dddddd;
+    --cc-border-soft: #e8e8e8;
+
+    --cc-text: #545454;
+    --cc-heading: #4c4d5a;
+    --cc-muted: #999999;
+
+    --cc-success: #4cb64c;
+    --cc-warning: #f0ad4e;
+    --cc-danger: #e3503e;
+    --cc-info: #5bc0de;
+
+    --cc-font: "Open Sans", "Segoe UI", Arial, sans-serif;
+    --cc-font-size: 13px;
+    --cc-font-small: 12px;
+    --cc-font-title: 25px;
+
+    --cc-button-radius: 3px;
+    --cc-shadow: 0 1px 3px rgba(0, 0, 0, .08);
 }

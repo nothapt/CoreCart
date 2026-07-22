@@ -28,7 +28,7 @@ final class CategoryController
 
     public function view(Request $request): Response
     {
-        $id = (int) ($request->getQuery('id') ?? 0);
+        $id = (int) ($request->getQueryParam('id') ?? 0);
         if ($id <= 0) {
             return JsonResponse::error('Category ID is required', 400);
         }

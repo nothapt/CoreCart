@@ -42,8 +42,9 @@ class DtoTest extends TestCase
 
     public function testRegisterDTO(): void
     {
-        $dto = RegisterDTO::fromArray(['username' => 'john', 'email' => 'john@test.com', 'password' => 'secret123']);
-        $this->assertSame('john', $dto->username);
+        $dto = RegisterDTO::fromArray(['firstname' => 'John', 'lastname' => 'Doe', 'email' => 'john@test.com', 'password' => 'secret123']);
+        $this->assertSame('John', $dto->firstname);
+        $this->assertSame('Doe', $dto->lastname);
         $this->assertSame('john@test.com', $dto->email);
         $this->assertSame('secret123', $dto->password);
     }

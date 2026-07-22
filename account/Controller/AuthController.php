@@ -71,7 +71,9 @@ class AuthController
         $session->regenerate();
 
         $session->set('customer_id', (int) $user['customer_id']);
-        $session->set('customer_username', $user['username']);
+        $session->set('customer_firstname', $user['firstname'] ?? '');
+        $session->set('customer_lastname', $user['lastname'] ?? '');
+        $session->set('customer_username', $user['username'] ?? '');
         $session->set('customer_email', $user['email']);
 
         $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);
@@ -108,7 +110,8 @@ class AuthController
             $session->regenerate();
 
             $session->set('customer_id', $id);
-            $session->set('customer_username', $dto->username);
+            $session->set('customer_firstname', $dto->firstname);
+            $session->set('customer_lastname', $dto->lastname);
             $session->set('customer_email', $dto->email);
 
             $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);

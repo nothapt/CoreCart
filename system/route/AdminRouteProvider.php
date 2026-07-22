@@ -3,202 +3,85 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Route;
 
+use CoreCart\System\Engine\AuthMiddleware;
+use CoreCart\System\Engine\CsrfMiddleware;
+use CoreCart\System\Engine\RequestMiddleware;
 use CoreCart\System\Engine\Router;
+use CoreCart\System\Engine\SecurityHeaders;
 
-class AdminRouteProvider
+final class AdminRouteProvider
 {
     public function register(Router $router): void
     {
         $publicForm = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\CsrfMiddleware::class,
+            SecurityHeaders::class,
+            CsrfMiddleware::class,
         ];
 
         $publicMutation = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\CsrfMiddleware::class,
-            \CoreCart\System\Engine\RequestMiddleware::class,
+            SecurityHeaders::class,
+            CsrfMiddleware::class,
+            RequestMiddleware::class,
         ];
 
         $authenticated = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\AuthMiddleware::class,
+            SecurityHeaders::class,
+            AuthMiddleware::class,
         ];
 
         $authenticatedMutation = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\AuthMiddleware::class,
-            \CoreCart\System\Engine\CsrfMiddleware::class,
-            \CoreCart\System\Engine\RequestMiddleware::class,
+            SecurityHeaders::class,
+            AuthMiddleware::class,
+            CsrfMiddleware::class,
+            RequestMiddleware::class,
         ];
 
-        // Admin login: GET shows form, POST processes login
-        // Now supports both HTTP methods on the same path
+        // Authentication
         $router->addRoute('/admin', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
         $router->addRoute('/admin/', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
         $router->addRoute('/admin/login', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
         $router->addRoute('/admin/login', \CoreCart\Admin\Controller\AuthController::class, 'loginPost', $publicMutation, ['POST']);
+        $router->addRoute('/admin/auth/login', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
+        $router->addRoute('/admin/auth/loginPost', \CoreCart\Admin\Controller\AuthController::class, 'loginPost', $publicMutation, ['POST']);
+        $router->addRoute('/admin/auth/logout', \CoreCart\Admin\Controller\AuthController::class, 'logout', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/csrf-token', \CoreCart\Admin\Controller\AuthController::class, 'csrfToken', $authenticated, ['GET']);
 
-        // Product create: GET shows form, POST saves
+        // Dashboard
+        $router->addRoute('/admin/dashboard', \CoreCart\Admin\Controller\DashboardController::class, 'index', $authenticated, ['GET']);
+
+        // Products
+        $router->addRoute('/admin/product/index', \CoreCart\Admin\Controller\ProductController::class, 'index', $authenticated, ['GET']);
         $router->addRoute('/admin/product/create', \CoreCart\Admin\Controller\ProductController::class, 'create', $authenticated, ['GET']);
         $router->addRoute('/admin/product/create', \CoreCart\Admin\Controller\ProductController::class, 'createPost', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/product/createPost', \CoreCart\Admin\Controller\ProductController::class, 'createPost', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/product/edit', \CoreCart\Admin\Controller\ProductController::class, 'edit', $authenticated, ['GET']);
+        $router->addRoute('/admin/product/update', \CoreCart\Admin\Controller\ProductController::class, 'update', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/product/delete', \CoreCart\Admin\Controller\ProductController::class, 'delete', $authenticatedMutation, ['POST']);
 
-        // Category create: GET shows form, POST saves
+        // Categories
+        $router->addRoute('/admin/category/index', \CoreCart\Admin\Controller\CategoryController::class, 'index', $authenticated, ['GET']);
         $router->addRoute('/admin/category/create', \CoreCart\Admin\Controller\CategoryController::class, 'createForm', $authenticated, ['GET']);
         $router->addRoute('/admin/category/create', \CoreCart\Admin\Controller\CategoryController::class, 'create', $authenticatedMutation, ['POST']);
-
-        // Category edit: GET shows form, POST saves
         $router->addRoute('/admin/category/edit', \CoreCart\Admin\Controller\CategoryController::class, 'editForm', $authenticated, ['GET']);
         $router->addRoute('/admin/category/edit', \CoreCart\Admin\Controller\CategoryController::class, 'update', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/category/update', \CoreCart\Admin\Controller\CategoryController::class, 'update', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/category/delete', \CoreCart\Admin\Controller\CategoryController::class, 'delete', $authenticatedMutation, ['POST']);
 
-        $router->addRoutes([
-            // Auth (backward compatibility)
-            'admin/auth/login' => [
-                'controller' => \CoreCart\Admin\Controller\AuthController::class,
-                'method'     => 'login',
-                'middleware'  => $publicForm,
-                'methods'    => ['GET'],
-            ],
-            'admin/auth/loginPost' => [
-                'controller' => \CoreCart\Admin\Controller\AuthController::class,
-                'method'     => 'loginPost',
-                'middleware'  => $publicMutation,
-                'methods'    => ['POST'],
-            ],
-            'admin/auth/logout' => [
-                'controller' => \CoreCart\Admin\Controller\AuthController::class,
-                'method'     => 'logout',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
-            'admin/csrf-token' => [
-                'controller' => \CoreCart\Admin\Controller\AuthController::class,
-                'method'     => 'csrfToken',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
+        // Orders
+        $router->addRoute('/admin/order/index', \CoreCart\Admin\Controller\OrderController::class, 'index', $authenticated, ['GET']);
+        $router->addRoute('/admin/order/view', \CoreCart\Admin\Controller\OrderController::class, 'view', $authenticated, ['GET']);
+        $router->addRoute('/admin/order/updateStatus', \CoreCart\Admin\Controller\OrderController::class, 'updateStatus', $authenticatedMutation, ['POST']);
 
-            // Dashboard
-            'admin/dashboard' => [
-                'controller' => \CoreCart\Admin\Controller\DashboardController::class,
-                'method'     => 'index',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
+        // Customers
+        $router->addRoute('/admin/customer/index', \CoreCart\Admin\Controller\CustomerController::class, 'index', $authenticated, ['GET']);
+        $router->addRoute('/admin/customer/view', \CoreCart\Admin\Controller\CustomerController::class, 'view', $authenticated, ['GET']);
 
-            // Products
-            'admin/product/index' => [
-                'controller' => \CoreCart\Admin\Controller\ProductController::class,
-                'method'     => 'index',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-            'admin/product/create' => [
-                'controller' => \CoreCart\Admin\Controller\ProductController::class,
-                'method'     => 'create',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-            'admin/product/createPost' => [
-                'controller' => \CoreCart\Admin\Controller\ProductController::class,
-                'method'     => 'createPost',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
-            'admin/product/edit' => [
-                'controller' => \CoreCart\Admin\Controller\ProductController::class,
-                'method'     => 'edit',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-            'admin/product/update' => [
-                'controller' => \CoreCart\Admin\Controller\ProductController::class,
-                'method'     => 'update',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
-            'admin/product/delete' => [
-                'controller' => \CoreCart\Admin\Controller\ProductController::class,
-                'method'     => 'delete',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
+        // Design
+        $router->addRoute('/admin/design/theme-editor', \CoreCart\Admin\Controller\ThemeEditorController::class, 'index', $authenticated, ['GET']);
+        $router->addRoute('/admin/design/theme-editor', \CoreCart\Admin\Controller\ThemeEditorController::class, 'save', $authenticatedMutation, ['POST']);
 
-            // Categories
-            'admin/category/index' => [
-                'controller' => \CoreCart\Admin\Controller\CategoryController::class,
-                'method'     => 'index',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-            'admin/category/create' => [
-                'controller' => \CoreCart\Admin\Controller\CategoryController::class,
-                'method'     => 'create',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
-            'admin/category/update' => [
-                'controller' => \CoreCart\Admin\Controller\CategoryController::class,
-                'method'     => 'update',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
-            'admin/category/delete' => [
-                'controller' => \CoreCart\Admin\Controller\CategoryController::class,
-                'method'     => 'delete',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
-
-            // Orders
-            'admin/order/index' => [
-                'controller' => \CoreCart\Admin\Controller\OrderController::class,
-                'method'     => 'index',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-            'admin/order/view' => [
-                'controller' => \CoreCart\Admin\Controller\OrderController::class,
-                'method'     => 'view',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-            'admin/order/updateStatus' => [
-                'controller' => \CoreCart\Admin\Controller\OrderController::class,
-                'method'     => 'updateStatus',
-                'middleware'  => $authenticatedMutation,
-                'methods'    => ['POST'],
-            ],
-
-            // Customers
-            'admin/customer/index' => [
-                'controller' => \CoreCart\Admin\Controller\CustomerController::class,
-                'method'     => 'index',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-            'admin/customer/view' => [
-                'controller' => \CoreCart\Admin\Controller\CustomerController::class,
-                'method'     => 'view',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-
-            // Settings
-            'admin/setting/index' => [
-                'controller' => \CoreCart\Admin\Controller\SettingController::class,
-                'method'     => 'index',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-
-            // Modifications
-            'admin/modification/index' => [
-                'controller' => \CoreCart\Admin\Controller\ModificationController::class,
-                'method'     => 'index',
-                'middleware'  => $authenticated,
-                'methods'    => ['GET'],
-            ],
-        ]);
+        // System
+        $router->addRoute('/admin/setting/index', \CoreCart\Admin\Controller\SettingController::class, 'index', $authenticated, ['GET']);
+        $router->addRoute('/admin/modification/index', \CoreCart\Admin\Controller\ModificationController::class, 'index', $authenticated, ['GET']);
     }
 }

@@ -183,8 +183,15 @@ class OrderRepository
         });
     }
 
-    public function updateStatus(int $id, OrderStatus $status): bool
+    public function updateStatus(int $id, OrderStatus $status, string $comment = ''): bool
     {
+        if ($comment !== '') {
+            return $this->db->execute(
+                "UPDATE cc_order SET status = :status, comment = :comment WHERE order_id = :id",
+                ['status' => $status->value, 'comment' => $comment, 'id' => $id]
+            ) > 0;
+        }
+
         return $this->db->execute(
             "UPDATE cc_order SET status = :status WHERE order_id = :id",
             ['status' => $status->value, 'id' => $id]

@@ -49,7 +49,6 @@ final class AccountController
         try {
             $customerService->changePassword(
                 $customerId,
-                $body['current_password'] ?? '',
                 $body['new_password'] ?? '',
             );
         } catch (\RuntimeException $e) {
@@ -67,7 +66,7 @@ final class AccountController
         }
 
         $orderService = $this->container->get(OrderService::class);
-        $page = max(1, (int) ($request->getQuery('page') ?? 1));
+        $page = max(1, (int) ($request->getQueryParam('page') ?? 1));
         $orders = $orderService->getCustomerOrders($customerId, $page);
 
         return JsonResponse::success($orders);

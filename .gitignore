@@ -26,3 +26,4 @@
 *.swo
 .phpunit.result.cache
 composer.phar
+nul

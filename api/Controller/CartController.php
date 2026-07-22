@@ -7,7 +7,9 @@ use CoreCart\System\Engine\Container;
 use CoreCart\System\Engine\JsonResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
+use CoreCart\System\Infrastructure\SessionInterface;
 use CoreCart\System\Service\CartService;
+use CoreCart\System\Dto\CartAddDTO;
 
 final class CartController
 {
@@ -20,20 +22,20 @@ final class CartController
 
     public function index(Request $request): Response
     {
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
         $cart = $this->container->get(CartService::class);
-        $items = $cart->getItems($sessionId, $customerId);
+        $cartData = $cart->getCart($sessionId, $customerId);
 
-        return JsonResponse::success(['items' => $items]);
+        return JsonResponse::success(['items' => $cartData['items']]);
     }
 
     public function count(Request $request): Response
     {
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
         $cart = $this->container->get(CartService::class);
-        $count = $cart->getItemCount($sessionId, $customerId);
+        $count = $cart->getCartCount($sessionId, $customerId);
 
         return JsonResponse::success(['count' => $count]);
     }
@@ -48,10 +50,11 @@ final class CartController
             return JsonResponse::error('Product ID is required', 400);
         }
 
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
         $cart = $this->container->get(CartService::class);
-        $cart->addItem($sessionId, $customerId, $productId, $quantity);
+        $dto = new CartAddDTO(productId: $productId, quantity: $quantity);
+        $cart->addItem($sessionId, $dto, $customerId);
 
         return JsonResponse::success(null, 'Item added to cart');
     }
@@ -66,7 +69,7 @@ final class CartController
             return JsonResponse::error('Cart ID is required', 400);
         }
 
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
         $cart = $this->container->get(CartService::class);
         $cart->updateQuantity($cartId, $quantity, $sessionId, $customerId);
@@ -83,7 +86,7 @@ final class CartController
             return JsonResponse::error('Cart ID is required', 400);
         }
 
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
         $cart = $this->container->get(CartService::class);
         $cart->removeItem($cartId, $sessionId, $customerId);
@@ -93,10 +96,10 @@ final class CartController
 
     public function clear(Request $request): Response
     {
-        $sessionId = $request->getSessionId();
+        $sessionId = $this->container->get(SessionInterface::class)->getId();
         $customerId = $request->getUserId();
         $cart = $this->container->get(CartService::class);
-        $cart->clear($sessionId, $customerId);
+        $cart->clearCart($sessionId, $customerId);
 
         return JsonResponse::success(null, 'Cart cleared');
     }

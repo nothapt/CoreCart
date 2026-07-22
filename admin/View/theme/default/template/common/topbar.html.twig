@@ -1,12 +1,52 @@
-<header class="cc-admin-topbar">
-    <div class="cc-admin-topbar-left">
-        <a href="/admin/dashboard" class="brand"><i class="fa-solid fa-cube"></i> CoreCart</a>
-    </div>
-    <div class="cc-admin-topbar-right">
-        <a href="/" target="_blank"><i class="fa-solid fa-store"></i> Open store</a>
-        <form method="post" action="/admin/auth/logout" style="display:inline;">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-            <button type="submit" class="cc-btn-link" style="color:#6c757d; font-size:13px; border:none; background:none; cursor:pointer; padding:0;"><i class="fa-solid fa-sign-out-alt"></i> Sign out</button>
-        </form>
+<header class="cc-header">
+    <a href="/admin/dashboard" class="cc-header-brand">
+        corecart
+        <svg class="cc-logo-icon"><use href="#cc-i-cart"></use></svg>
+    </a>
+
+    <button type="button"
+            class="cc-header-menu-button"
+            data-sidebar-toggle
+            aria-label="Toggle navigation">
+        <svg class="cc-icon cc-icon-lg"><use href="#cc-i-menu"></use></svg>
+    </button>
+
+    <div class="cc-header-spacer"></div>
+
+    <div class="cc-header-actions">
+        <a href="/" target="_blank" rel="noopener" class="cc-header-action cc-hide-mobile" title="Open store">
+            <svg class="cc-icon cc-icon-lg"><use href="#cc-i-store"></use></svg>
+        </a>
+
+        <div class="cc-dropdown">
+            <button type="button"
+                    class="cc-header-action"
+                    data-dropdown-toggle
+                    aria-label="Administrator menu">
+                <span class="cc-header-user-avatar">
+                    {{ admin_username|default('A')|slice(0, 1)|upper }}
+                </span>
+                <span class="cc-header-user-name">{{ admin_username|default('Administrator') }}</span>
+                <svg class="cc-icon"><use href="#cc-i-chevron"></use></svg>
+            </button>
+
+            <div class="cc-header-dropdown">
+                <a href="/admin/setting/index">
+                    <svg class="cc-icon"><use href="#cc-i-settings"></use></svg>
+                    Settings
+                </a>
+                <a href="/admin/design/theme-editor">
+                    <svg class="cc-icon"><use href="#cc-i-code"></use></svg>
+                    Theme editor
+                </a>
+                <form method="post" action="/admin/auth/logout">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+                    <button type="submit">
+                        <svg class="cc-icon"><use href="#cc-i-logout"></use></svg>
+                        Sign out
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </header>

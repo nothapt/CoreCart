@@ -8,7 +8,7 @@ use CoreCart\System\Engine\HtmlResponse;
 use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\View\AdminContextProvider;
 use CoreCart\System\View\TemplateRendererInterface;
 
 class CustomerController
@@ -27,18 +27,14 @@ class CustomerController
         $customers = $customerRepo->findAll(20, $offset);
         $total = $customerService->getCustomerCount();
 
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $ctx = [
-            'customers'    => $customers,
-            'total'        => $total,
-            'page'         => $page,
-            'pages'        => max(1, (int) ceil($total / 20)),
-            'active_menu'  => 'customer',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['customers'] = $customers;
+        $ctx['total'] = $total;
+        $ctx['page'] = $page;
+        $ctx['pages'] = max(1, (int) ceil($total / 20));
+        $ctx['active_menu'] = 'customer';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
@@ -59,18 +55,14 @@ class CustomerController
             return new RedirectResponse('/admin/customer/index');
         }
 
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $data = [
-            'customer'     => $customer,
-            'active_menu'  => 'customer',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['customer'] = $customer;
+        $ctx['active_menu'] = 'customer';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('customer/view.html.twig', $data));
+        return new HtmlResponse($renderer->render('customer/view.html.twig', $ctx));
     }
 }

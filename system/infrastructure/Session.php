@@ -19,13 +19,39 @@ class Session implements SessionInterface
     private function configure(): void
     {
         ini_set('session.cookie_httponly', '1');
-        ini_set('session.cookie_secure', (($_ENV['APP_DEBUG'] ?? 'false') === 'true') ? '0' : '1');
+        ini_set('session.cookie_secure', self::isSecureRequest() ? '1' : '0');
         ini_set('session.cookie_samesite', 'Lax');
         ini_set('session.gc_maxlifetime', '7200');
         ini_set('session.cookie_lifetime', '0');
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
         ini_set('session.name', $this->sessionName);
+    }
+
+    /**
+     * Detect whether the current request is over HTTPS.
+     */
+    private static function isSecureRequest(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            return true;
+        }
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            return true;
+        }
+        if (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') {
+            return true;
+        }
+        if (isset($_SERVER['HTTP_CF_VISITOR'])) {
+            $cf = json_decode($_SERVER['HTTP_CF_VISITOR'], true);
+            if (is_array($cf) && ($cf['scheme'] ?? '') === 'https') {
+                return true;
+            }
+        }
+        if (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
+            return true;
+        }
+        return false;
     }
 
     public function get(string $key, mixed $default = null): mixed

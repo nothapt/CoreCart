@@ -29,7 +29,7 @@ class CartController
         $data = $context->build($request);
         $data['items'] = $cart['items'] ?? [];
         $data['total'] = $cart['total'] ?? '0.00';
-        $data['item_count'] = $cart['item_count'] ?? 0;
+        $data['cart_count'] = $cart['count'] ?? 0;
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
         return new HtmlResponse($renderer->render('cart/index.html.twig', $data));

@@ -1,15 +1,99 @@
-<aside class="cc-admin-sidebar">
-    <a href="/admin/dashboard" class="cc-admin-logo"><i class="fa-solid fa-cube"></i>CoreCart</a>
-    <nav class="cc-admin-nav">
-        <div class="cc-admin-nav-section-title">Core</div>
-        <a href="/admin/dashboard" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'dashboard' %}active{% endif %}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+{% set catalog_open = active_menu|default('') in ['product', 'category'] %}
+{% set design_open = active_menu|default('') in ['theme_editor'] %}
+{% set system_open = active_menu|default('') in ['setting', 'modification'] %}
 
-        <div class="cc-admin-nav-section-title">Catalog</div>
-        <a href="/admin/product/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'product' %}active{% endif %}"><i class="fa-solid fa-tags"></i> Products</a>
-        <a href="/admin/category/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'category' %}active{% endif %}"><i class="fa-solid fa-folder"></i> Categories</a>
+<aside class="cc-sidebar" aria-label="Admin navigation">
+    <div class="cc-sidebar-title">
+        <svg class="cc-icon"><use href="#cc-i-menu"></use></svg>
+        Administration
+    </div>
 
-        <div class="cc-admin-nav-section-title">Sales</div>
-        <a href="/admin/order/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'order' %}active{% endif %}"><i class="fa-solid fa-shopping-cart"></i> Orders</a>
-        <a href="/admin/customer/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'customer' %}active{% endif %}"><i class="fa-solid fa-users"></i> Customers</a>
+    <nav class="cc-nav">
+        <a href="/admin/dashboard"
+           class="cc-nav-link {{ active_menu|default('') == 'dashboard' ? 'active' : '' }}">
+            <svg class="cc-nav-icon cc-icon"><use href="#cc-i-dashboard"></use></svg>
+            Dashboard
+        </a>
+
+        <button type="button"
+                class="cc-nav-parent {{ catalog_open ? 'active' : '' }}"
+                data-nav-toggle
+                data-active="{{ catalog_open ? '1' : '0' }}"
+                aria-expanded="{{ catalog_open ? 'true' : 'false' }}"
+                aria-controls="cc-menu-catalog">
+            <svg class="cc-nav-icon cc-icon"><use href="#cc-i-tag"></use></svg>
+            Catalog
+            <svg class="cc-nav-arrow cc-icon"><use href="#cc-i-chevron"></use></svg>
+        </button>
+        <ul id="cc-menu-catalog" class="cc-nav-submenu {{ catalog_open ? 'open' : '' }}">
+            <li>
+                <a href="/admin/category/index"
+                   class="{{ active_menu|default('') == 'category' ? 'active' : '' }}">
+                    Categories
+                </a>
+            </li>
+            <li>
+                <a href="/admin/product/index"
+                   class="{{ active_menu|default('') == 'product' ? 'active' : '' }}">
+                    Products
+                </a>
+            </li>
+        </ul>
+
+        <a href="/admin/order/index"
+           class="cc-nav-link {{ active_menu|default('') == 'order' ? 'active' : '' }}">
+            <svg class="cc-nav-icon cc-icon"><use href="#cc-i-cart"></use></svg>
+            Sales
+        </a>
+
+        <a href="/admin/customer/index"
+           class="cc-nav-link {{ active_menu|default('') == 'customer' ? 'active' : '' }}">
+            <svg class="cc-nav-icon cc-icon"><use href="#cc-i-users"></use></svg>
+            Customers
+        </a>
+
+        <button type="button"
+                class="cc-nav-parent {{ design_open ? 'active' : '' }}"
+                data-nav-toggle
+                data-active="{{ design_open ? '1' : '0' }}"
+                aria-expanded="{{ design_open ? 'true' : 'false' }}"
+                aria-controls="cc-menu-design">
+            <svg class="cc-nav-icon cc-icon"><use href="#cc-i-screen"></use></svg>
+            Design
+            <svg class="cc-nav-arrow cc-icon"><use href="#cc-i-chevron"></use></svg>
+        </button>
+        <ul id="cc-menu-design" class="cc-nav-submenu {{ design_open ? 'open' : '' }}">
+            <li>
+                <a href="/admin/design/theme-editor"
+                   class="{{ active_menu|default('') == 'theme_editor' ? 'active' : '' }}">
+                    Theme editor
+                </a>
+            </li>
+        </ul>
+
+        <button type="button"
+                class="cc-nav-parent {{ system_open ? 'active' : '' }}"
+                data-nav-toggle
+                data-active="{{ system_open ? '1' : '0' }}"
+                aria-expanded="{{ system_open ? 'true' : 'false' }}"
+                aria-controls="cc-menu-system">
+            <svg class="cc-nav-icon cc-icon"><use href="#cc-i-settings"></use></svg>
+            System
+            <svg class="cc-nav-arrow cc-icon"><use href="#cc-i-chevron"></use></svg>
+        </button>
+        <ul id="cc-menu-system" class="cc-nav-submenu {{ system_open ? 'open' : '' }}">
+            <li>
+                <a href="/admin/setting/index"
+                   class="{{ active_menu|default('') == 'setting' ? 'active' : '' }}">
+                    Settings
+                </a>
+            </li>
+            <li>
+                <a href="/admin/modification/index"
+                   class="{{ active_menu|default('') == 'modification' ? 'active' : '' }}">
+                    Modifications
+                </a>
+            </li>
+        </ul>
     </nav>
 </aside>

@@ -3,24 +3,84 @@
 {% block title %}Sign in — CoreCart Admin{% endblock %}
 
 {% block content %}
-<div class="cc-admin-auth-card">
-    <h1 class="cc-admin-auth-title">CoreCart</h1>
-    <p class="cc-admin-auth-subtitle">Admin panel sign in</p>
+<div class="cc-login-panel">
+    <div class="cc-login-heading">
+        <div class="cc-login-brand">
+            <span class="cc-login-brand-name">corecart</span>
+            <svg class="cc-login-brand-icon cc-icon" aria-hidden="true">
+                <use href="#cc-i-cart"></use>
+            </svg>
+        </div>
 
-    <form method="post" action="/admin/login">
+        <p class="cc-login-subtitle">Administration</p>
+    </div>
+
+    {% if flash_error|default('') %}
+        <div class="cc-alert cc-alert-danger">
+            {{ flash_error }}
+        </div>
+    {% endif %}
+
+    <form method="post" action="/admin/login" class="cc-login-form">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
 
         <div class="cc-field">
-            <label class="cc-label" for="login">Username or email</label>
-            <input type="text" id="login" name="login" class="cc-input" required autofocus>
+            <label class="cc-label cc-login-label" for="login">
+                Username or email
+            </label>
+
+            <div class="cc-login-input-group">
+                <span class="cc-login-input-icon">
+                    <svg class="cc-icon" aria-hidden="true">
+                        <use href="#cc-i-user"></use>
+                    </svg>
+                </span>
+
+                <input
+                    type="text"
+                    id="login"
+                    name="login"
+                    class="cc-input cc-login-input"
+                    autocomplete="username"
+                    required
+                    autofocus
+                >
+            </div>
         </div>
 
         <div class="cc-field">
-            <label class="cc-label" for="password">Password</label>
-            <input type="password" id="password" name="password" class="cc-input" required>
+            <label class="cc-label cc-login-label" for="password">
+                Password
+            </label>
+
+            <div class="cc-login-input-group">
+                <span class="cc-login-input-icon">
+                    <svg class="cc-icon" aria-hidden="true">
+                        <use href="#cc-i-lock"></use>
+                    </svg>
+                </span>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="cc-input cc-login-input"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
         </div>
 
-        <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">Sign in</button>
+        <button type="submit" class="cc-btn cc-btn-primary cc-btn-block cc-login-submit">
+            <svg class="cc-icon" aria-hidden="true">
+                <use href="#cc-i-login"></use>
+            </svg>
+            Sign in
+        </button>
     </form>
+
+    <div class="cc-login-footer">
+        CoreCart Administration
+    </div>
 </div>
 {% endblock %}

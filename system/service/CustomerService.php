@@ -23,8 +23,11 @@ class CustomerService
 
     public function register(RegisterDTO $dto): int
     {
-        if (trim($dto->username) === '') {
-            throw new \InvalidArgumentException('Username is required');
+        if (trim($dto->firstname) === '') {
+            throw new \InvalidArgumentException('First name is required');
+        }
+        if (trim($dto->lastname) === '') {
+            throw new \InvalidArgumentException('Last name is required');
         }
         if (trim($dto->email) === '' || !filter_var($dto->email, FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException('Valid email is required');
@@ -38,12 +41,20 @@ class CustomerService
             throw new \RuntimeException('Email already registered');
         }
 
-        $existing = $this->customerRepo->findByName($dto->username);
-        if ($existing) {
-            throw new \RuntimeException('Username already taken');
+        // Auto-generate username from email prefix, ensure uniqueness
+        $baseUsername = strtolower(trim(explode('@', $dto->email)[0]));
+        $baseUsername = preg_replace('/[^a-z0-9._-]/', '', $baseUsername);
+        if ($baseUsername === '') {
+            $baseUsername = 'customer';
+        }
+        $username = $baseUsername;
+        $counter = 1;
+        while ($this->customerRepo->findByName($username)) {
+            $username = $baseUsername . $counter;
+            $counter++;
         }
 
-        return $this->customerRepo->create($dto->username, $dto->email, $dto->password);
+        return $this->customerRepo->create($username, $dto->firstname, $dto->lastname, $dto->email, $dto->password);
     }
 
     public function login(string $email, string $password): ?array
