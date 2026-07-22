@@ -4,19 +4,16 @@ declare(strict_types=1);
 namespace CoreCart\System\Service;
 
 use CoreCart\System\Repository\CategoryRepository;
-use CoreCart\System\Repository\ProductRepository;
 use CoreCart\System\Entity\Category;
 use CoreCart\System\Dto\CategoryDTO;
 
 class CategoryService
 {
     private CategoryRepository $categoryRepo;
-    private ProductRepository $productRepo;
 
-    public function __construct(CategoryRepository $categoryRepo, ProductRepository $productRepo)
+    public function __construct(CategoryRepository $categoryRepo)
     {
         $this->categoryRepo = $categoryRepo;
-        $this->productRepo = $productRepo;
     }
 
     public function getCategory(int $id): ?Category

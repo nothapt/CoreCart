@@ -11,4 +11,3 @@ parameters:
         - vendor
         - storage
     ignoreErrors:
-        - '#Call to an undefined method CoreCart\\System\\Engine\\Container::get\(\)#'

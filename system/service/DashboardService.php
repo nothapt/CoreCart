@@ -8,6 +8,7 @@ use CoreCart\System\Repository\OrderRepository;
 use CoreCart\System\Repository\CustomerRepository;
 use CoreCart\System\Repository\ProductRepository;
 use CoreCart\System\Repository\CategoryRepository;
+use CoreCart\System\Infrastructure\OrderStatus;
 
 class DashboardService
 {
@@ -35,6 +36,8 @@ class DashboardService
     {
         $today = date('Y-m-d');
         $monthStart = date('Y-m-01');
+        $todayStart = $today . ' 00:00:00';
+        $todayEnd = $today . ' 23:59:59';
 
         return [
             'total_orders'       => $this->orderRepo->count(),
@@ -42,13 +45,13 @@ class DashboardService
             'total_products'     => $this->productRepo->count(),
             'total_categories'   => $this->categoryRepo->count(),
             'total_admins'       => $this->adminUserRepo->count(),
-            'revenue_today'      => $this->orderRepo->getRevenue($today, $today . ' 23:59:59'),
+            'revenue_today'      => $this->orderRepo->getRevenue($todayStart, $todayEnd),
             'revenue_month'      => $this->orderRepo->getRevenue($monthStart),
             'revenue_total'      => $this->orderRepo->getRevenue(),
-            'orders_today'       => $this->orderRepo->count(),
-            'pending_orders'     => $this->orderRepo->count(0),
-            'processing_orders'  => $this->orderRepo->count(1),
-            'completed_orders'   => $this->orderRepo->count(3),
+            'orders_today'       => $this->orderRepo->countByDate($todayStart, $todayEnd),
+            'pending_orders'     => $this->orderRepo->count(OrderStatus::Pending),
+            'processing_orders'  => $this->orderRepo->count(OrderStatus::Processing),
+            'completed_orders'   => $this->orderRepo->count(OrderStatus::Delivered),
         ];
     }
 }

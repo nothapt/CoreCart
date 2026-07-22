@@ -22,7 +22,14 @@ class OrderController
     {
         $page = max(1, (int) $request->getQueryParam('page', 1));
         $statusParam = $request->getQueryParam('status');
-        $status = $statusParam !== null ? OrderStatus::fromInt((int) $statusParam) : null;
+        $status = null;
+        if ($statusParam !== null) {
+            try {
+                $status = OrderStatus::fromInt((int) $statusParam);
+            } catch (\InvalidArgumentException $e) {
+                return JsonResponse::error('Invalid status value', 422, 'VALIDATION_ERROR');
+            }
+        }
 
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
         $data = $orderService->getOrders($page, 20, $status);

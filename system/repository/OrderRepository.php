@@ -213,10 +213,21 @@ class OrderRepository
         return (int) ($result[0]['total'] ?? 0);
     }
 
+    public function countByDate(string $dateFrom, string $dateTo): int
+    {
+        $sql = "SELECT COUNT(*) AS total FROM cc_order WHERE date_added >= :from AND date_added <= :to";
+        $result = $this->db->query($sql, ['from' => $dateFrom, 'to' => $dateTo]);
+        return (int) ($result[0]['total'] ?? 0);
+    }
+
     public function getRevenue(string $dateFrom = '', string $dateTo = ''): string
     {
-        $sql = "SELECT COALESCE(SUM(total), 0) AS revenue FROM cc_order WHERE status >= :min_status";
-        $params = ['min_status' => OrderStatus::Processing->value];
+        $sql = "SELECT COALESCE(SUM(total), 0) AS revenue FROM cc_order WHERE status IN (:p, :s, :d)";
+        $params = [
+            'p' => OrderStatus::Processing->value,
+            's' => OrderStatus::Shipped->value,
+            'd' => OrderStatus::Delivered->value,
+        ];
 
         if ($dateFrom !== '') {
             $sql .= " AND date_added >= :date_from";

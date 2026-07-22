@@ -20,19 +20,28 @@ class HealthController
     public function ready(Request $request): Response
     {
         $checks = [];
+        $allOk = true;
 
+        // Check database connection
         try {
             $db = $this->container->get(Database::class);
             $db->query("SELECT 1");
+            // Verify critical tables exist
+            $tables = ['cc_admin_user', 'cc_product', 'cc_category', 'cc_customer', 'cc_order', 'cc_cart'];
+            foreach ($tables as $table) {
+                $db->query("SELECT 1 FROM `$table` LIMIT 1");
+            }
             $checks['database'] = 'ok';
         } catch (\Throwable $e) {
-            $checks['database'] = 'error: ' . $e->getMessage();
+            $checks['database'] = 'error';
+            $allOk = false;
         }
 
-        $checks['config'] = file_exists(DIR_ROOT . '/.env') ? 'ok' : 'missing';
+        // Check installed.lock
         $checks['installed'] = file_exists(DIR_STORAGE . '/installed.lock') ? 'ok' : 'not installed';
-
-        $allOk = !in_array('error', array_map(fn($v) => str_starts_with($v, 'error'), $checks));
+        if ($checks['installed'] !== 'ok') {
+            $allOk = false;
+        }
 
         return new JsonResponse(
             ['status' => $allOk ? 'ok' : 'degraded', 'checks' => $checks],

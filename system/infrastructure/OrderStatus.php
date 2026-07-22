@@ -43,8 +43,22 @@ enum OrderStatus: int
         return in_array($target, $this->allowedTransitions(), true);
     }
 
+    /**
+     * Create OrderStatus from int, throws on invalid value.
+     *
+     * @throws \InvalidArgumentException if value is not a valid status
+     */
     public static function fromInt(int $value): self
     {
-        return self::tryFrom($value) ?? self::Pending;
+        $status = self::tryFrom($value);
+        if ($status === null) {
+            throw new \InvalidArgumentException("Invalid order status value: {$value}");
+        }
+        return $status;
+    }
+
+    public static function tryFromInt(int $value): ?self
+    {
+        return self::tryFrom($value);
     }
 }

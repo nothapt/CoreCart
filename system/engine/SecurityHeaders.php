@@ -8,7 +8,7 @@ class SecurityHeaders implements Middleware
     public function handle(Request $request, callable $next): Response
     {
         /** @var Response $response */
-        $response = $next();
+        $response = $next($request);
 
         $response->setHeader('X-Content-Type-Options', 'nosniff');
         $response->setHeader('X-Frame-Options', 'DENY');

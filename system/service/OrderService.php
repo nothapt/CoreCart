@@ -4,36 +4,20 @@ declare(strict_types=1);
 namespace CoreCart\System\Service;
 
 use CoreCart\System\Repository\OrderRepository;
-use CoreCart\System\Repository\CartRepository;
-use CoreCart\System\Repository\ProductRepository;
-use CoreCart\System\Repository\CustomerRepository;
-use CoreCart\System\Repository\AddressRepository;
 use CoreCart\System\Dto\OrderCreateDTO;
 use CoreCart\System\Infrastructure\OrderStatus;
 
 class OrderService
 {
     private OrderRepository $orderRepo;
-    private CartRepository $cartRepo;
-    private ProductRepository $productRepo;
-    private CustomerRepository $customerRepo;
-    private AddressRepository $addressRepo;
 
     public function __construct(
         OrderRepository $orderRepo,
-        CartRepository $cartRepo,
-        ProductRepository $productRepo,
-        CustomerRepository $customerRepo,
-        AddressRepository $addressRepo
     ) {
         $this->orderRepo = $orderRepo;
-        $this->cartRepo = $cartRepo;
-        $this->productRepo = $productRepo;
-        $this->customerRepo = $customerRepo;
-        $this->addressRepo = $addressRepo;
     }
 
-    public function getOrder(int $id): ?Order
+    public function getOrder(int $id): ?\CoreCart\System\Entity\Order
     {
         return $this->orderRepo->findById($id);
     }
@@ -110,24 +94,23 @@ class OrderService
                 ];
             }
 
-            // Build order data with snapshot
-            $orderData = [
-                'customer_id'       => $dto->customerId,
-                'status'            => OrderStatus::Pending->value,
-                'total'             => $total,
-                'comment'           => $dto->comment,
-                'customer_email'    => $dto->customerEmail ?? null,
-                'customer_phone'    => $dto->customerPhone ?? null,
-                'shipping_firstname'  => $dto->shippingFirstname ?? null,
-                'shipping_lastname'   => $dto->shippingLastname ?? null,
-                'shipping_address_1'  => $dto->shippingAddress1 ?? null,
-                'shipping_address_2'  => $dto->shippingAddress2 ?? null,
-                'shipping_city'       => $dto->shippingCity ?? null,
-                'shipping_postcode'   => $dto->shippingPostcode ?? null,
-                'shipping_country'    => $dto->shippingCountry ?? null,
-                'shipping_zone'       => $dto->shippingZone ?? null,
-                'currency_code'       => 'USD',
-                'currency_value'      => '1.0000',
+            $params = [
+                'cid'          => $dto->customerId,
+                'status'       => OrderStatus::Pending->value,
+                'total'        => $total,
+                'comment'      => $dto->comment,
+                'email'        => $dto->customerEmail ?? null,
+                'phone'        => $dto->customerPhone ?? null,
+                's_fn'         => $dto->shippingFirstname ?? null,
+                's_ln'         => $dto->shippingLastname ?? null,
+                's_a1'         => $dto->shippingAddress1 ?? null,
+                's_a2'         => $dto->shippingAddress2 ?? null,
+                's_city'       => $dto->shippingCity ?? null,
+                's_pc'         => $dto->shippingPostcode ?? null,
+                's_country'    => $dto->shippingCountry ?? null,
+                's_zone'       => $dto->shippingZone ?? null,
+                'currency'     => 'USD',
+                'currency_val' => '1.0000',
             ];
 
             // Create order
@@ -144,7 +127,7 @@ class OrderService
                      :s_fn, :s_ln, :s_a1, :s_a2,
                      :s_city, :s_pc, :s_country, :s_zone,
                      :currency, :currency_val)",
-                $orderData
+                $params
             );
 
             $orderId = (int) $db->lastInsertId();
@@ -233,23 +216,23 @@ class OrderService
                 ];
             }
 
-            $orderData = [
-                'customer_id'       => $customerId,
-                'status'            => OrderStatus::Pending->value,
-                'total'             => $total,
-                'comment'           => $dto->comment,
-                'customer_email'    => $dto->customerEmail ?? null,
-                'customer_phone'    => $dto->customerPhone ?? null,
-                'shipping_firstname'  => $dto->shippingFirstname ?? null,
-                'shipping_lastname'   => $dto->shippingLastname ?? null,
-                'shipping_address_1'  => $dto->shippingAddress1 ?? null,
-                'shipping_address_2'  => $dto->shippingAddress2 ?? null,
-                'shipping_city'       => $dto->shippingCity ?? null,
-                'shipping_postcode'   => $dto->shippingPostcode ?? null,
-                'shipping_country'    => $dto->shippingCountry ?? null,
-                'shipping_zone'       => $dto->shippingZone ?? null,
-                'currency_code'       => 'USD',
-                'currency_value'      => '1.0000',
+$params = [
+                'cid'          => $customerId,
+                'status'       => OrderStatus::Pending->value,
+                'total'        => $total,
+                'comment'      => $dto->comment,
+                'email'        => $dto->customerEmail ?? null,
+                'phone'        => $dto->customerPhone ?? null,
+                's_fn'         => $dto->shippingFirstname ?? null,
+                's_ln'         => $dto->shippingLastname ?? null,
+                's_a1'         => $dto->shippingAddress1 ?? null,
+                's_a2'         => $dto->shippingAddress2 ?? null,
+                's_city'       => $dto->shippingCity ?? null,
+                's_pc'         => $dto->shippingPostcode ?? null,
+                's_country'    => $dto->shippingCountry ?? null,
+                's_zone'       => $dto->shippingZone ?? null,
+                'currency'     => 'USD',
+                'currency_val' => '1.0000',
             ];
 
             $db->execute(
@@ -265,7 +248,7 @@ class OrderService
                      :s_fn, :s_ln, :s_a1, :s_a2,
                      :s_city, :s_pc, :s_country, :s_zone,
                      :currency, :currency_val)",
-                $orderData
+                $params
             );
 
             $orderId = (int) $db->lastInsertId();
@@ -313,7 +296,10 @@ class OrderService
             throw new \RuntimeException("Order #{$id} not found");
         }
 
-        $currentStatus = OrderStatus::fromInt($order->status);
+        $currentStatus = OrderStatus::tryFrom($order->status);
+        if ($currentStatus === null) {
+            throw new \RuntimeException("Order has invalid status: {$order->status}");
+        }
 
         if (!$currentStatus->canTransitionTo($status)) {
             throw new \RuntimeException(
@@ -335,8 +321,8 @@ class OrderService
             throw new \RuntimeException('Order does not belong to this customer');
         }
 
-        $currentStatus = OrderStatus::fromInt($order->status);
-        if (!$currentStatus->canTransitionTo(OrderStatus::Cancelled)) {
+        $currentStatus = OrderStatus::tryFrom($order->status);
+        if ($currentStatus === null || !$currentStatus->canTransitionTo(OrderStatus::Cancelled)) {
             throw new \RuntimeException('Order cannot be cancelled at this stage');
         }
 

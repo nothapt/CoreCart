@@ -5,15 +5,15 @@ namespace CoreCart\System\Infrastructure;
 
 class Session implements SessionInterface
 {
-    private bool $started = false;
+    private string $sessionName;
 
-    public function __construct()
+    public function __construct(string $sessionName = 'CCSESSID')
     {
+        $this->sessionName = $sessionName;
         if (session_status() === PHP_SESSION_NONE) {
             $this->configure();
             session_start();
         }
-        $this->started = true;
     }
 
     private function configure(): void
@@ -25,7 +25,7 @@ class Session implements SessionInterface
         ini_set('session.cookie_lifetime', '0');
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
-        ini_set('session.name', 'CCSESSID');
+        ini_set('session.name', $this->sessionName);
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -74,7 +74,7 @@ class Session implements SessionInterface
                 'domain'   => $params['domain'],
                 'secure'   => $params['secure'],
                 'httponly'  => $params['httponly'],
-                'samesite' => $params['samesite'] ?? 'Lax',
+                'samesite' => $params['samesite'],
             ]);
         }
         session_destroy();

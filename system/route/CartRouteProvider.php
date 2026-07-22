@@ -13,13 +13,14 @@ class CartRouteProvider
             \CoreCart\System\Engine\SecurityHeaders::class,
         ];
 
-        $publicWithCsrf = [
+        $optionalAuth = [
             \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\CsrfMiddleware::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
         ];
 
         $withRequest = [
             \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
             \CoreCart\System\Engine\CsrfMiddleware::class,
             \CoreCart\System\Engine\RequestMiddleware::class,
         ];
@@ -28,7 +29,7 @@ class CartRouteProvider
             'cart' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'index',
-                'middleware'  => $public,
+                'middleware'  => $optionalAuth,
                 'methods'    => ['GET'],
             ],
             'cart/add' => [
@@ -52,12 +53,18 @@ class CartRouteProvider
             'cart/clear' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'clear',
-                'middleware'  => $publicWithCsrf,
+                'middleware'  => $optionalAuth,
                 'methods'    => ['POST'],
             ],
             'cart/count' => [
                 'controller' => \CoreCart\Cart\Controller\CartController::class,
                 'method'     => 'count',
+                'middleware'  => $optionalAuth,
+                'methods'    => ['GET'],
+            ],
+            'cart/csrf-token' => [
+                'controller' => \CoreCart\Cart\Controller\CartController::class,
+                'method'     => 'csrfToken',
                 'middleware'  => $public,
                 'methods'    => ['GET'],
             ],

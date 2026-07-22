@@ -130,7 +130,8 @@ class CartService
     private function verifyOwnership(array $item, string $sessionId, ?int $customerId): void
     {
         if ($customerId) {
-            if (isset($item['customer_id']) && (int) $item['customer_id'] !== $customerId) {
+            $itemCustomerId = $item['customer_id'] ?? null;
+            if ($itemCustomerId === null || (int) $itemCustomerId !== $customerId) {
                 throw new \RuntimeException('Cart item does not belong to this customer');
             }
         } else {

@@ -21,7 +21,7 @@ class ProductController
     {
         $page = max(1, (int) $request->getQueryParam('page', 1));
         $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
-        $data = $catalogService->getActiveProducts($page);
+        $data = $catalogService->getAllProducts($page);
 
         return JsonResponse::success($data);
     }

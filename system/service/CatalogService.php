@@ -22,11 +22,26 @@ class CatalogService
         return $this->productRepo->findById($id, $languageId);
     }
 
-    public function getActiveProducts(int $page = 1, int $perPage = 20): array
+public function getActiveProducts(int $page = 1, int $perPage = 20): array
     {
         $offset = ($page - 1) * $perPage;
         $products = $this->productRepo->findActive($perPage, $offset);
         $total = $this->productRepo->countActive();
+
+        return [
+            'products' => $products,
+            'total'    => $total,
+            'page'     => $page,
+            'per_page' => $perPage,
+            'pages'    => (int) ceil($total / $perPage),
+        ];
+    }
+
+    public function getAllProducts(int $page = 1, int $perPage = 20): array
+    {
+        $offset = ($page - 1) * $perPage;
+        $products = $this->productRepo->findAll($perPage, $offset);
+        $total = $this->productRepo->count();
 
         return [
             'products' => $products,

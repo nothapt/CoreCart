@@ -15,7 +15,20 @@ class OrderStatusTest extends TestCase
         $this->assertSame(OrderStatus::Shipped, OrderStatus::fromInt(2));
         $this->assertSame(OrderStatus::Delivered, OrderStatus::fromInt(3));
         $this->assertSame(OrderStatus::Cancelled, OrderStatus::fromInt(9));
-        $this->assertSame(OrderStatus::Pending, OrderStatus::fromInt(99));
+    }
+
+    public function testFromIntThrowsOnInvalid(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid order status value: 99');
+        OrderStatus::fromInt(99);
+    }
+
+    public function testTryFromInt(): void
+    {
+        $this->assertSame(OrderStatus::Pending, OrderStatus::tryFromInt(0));
+        $this->assertSame(OrderStatus::Processing, OrderStatus::tryFromInt(1));
+        $this->assertNull(OrderStatus::tryFromInt(99));
     }
 
     public function testLabel(): void

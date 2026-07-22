@@ -103,6 +103,13 @@ class CartController
         return JsonResponse::success(['count' => $count]);
     }
 
+    public function csrfToken(Request $request): Response
+    {
+        /** @var \CoreCart\System\Engine\CsrfMiddleware $csrfMiddleware */
+        $csrfMiddleware = $this->container->get(\CoreCart\System\Engine\CsrfMiddleware::class);
+        return new JsonResponse(['data' => ['csrf_token' => $csrfMiddleware->getToken()]]);
+    }
+
     private function getSessionId(): string
     {
         /** @var SessionInterface $session */

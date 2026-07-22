@@ -13,8 +13,14 @@ class CheckoutRouteProvider
             \CoreCart\System\Engine\SecurityHeaders::class,
         ];
 
-        $publicWithCsrf = [
+        $optionalAuth = [
             \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
+        ];
+
+        $withCsrf = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
             \CoreCart\System\Engine\CsrfMiddleware::class,
         ];
 
@@ -22,18 +28,24 @@ class CheckoutRouteProvider
             'checkout' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'index',
-                'middleware'  => $public,
+                'middleware'  => $optionalAuth,
                 'methods'    => ['GET'],
             ],
             'checkout/confirm' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'confirm',
-                'middleware'  => $publicWithCsrf,
+                'middleware'  => $withCsrf,
                 'methods'    => ['POST'],
             ],
             'checkout/success' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'success',
+                'middleware'  => $optionalAuth,
+                'methods'    => ['GET'],
+            ],
+            'checkout/csrf-token' => [
+                'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
+                'method'     => 'csrfToken',
                 'middleware'  => $public,
                 'methods'    => ['GET'],
             ],

@@ -116,4 +116,11 @@ class CheckoutController
         $session = $this->container->get(SessionInterface::class);
         return $session->getId();
     }
+
+    public function csrfToken(Request $request): Response
+    {
+        /** @var \CoreCart\System\Engine\CsrfMiddleware $csrfMiddleware */
+        $csrfMiddleware = $this->container->get(\CoreCart\System\Engine\CsrfMiddleware::class);
+        return new JsonResponse(['data' => ['csrf_token' => $csrfMiddleware->getToken()]]);
+    }
 }

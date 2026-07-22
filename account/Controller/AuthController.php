@@ -32,6 +32,14 @@ class AuthController
             return JsonResponse::error('Email and password are required', 422);
         }
 
+        // Rate limiting for customer login
+        $rateLimiter = $this->container->get(\CoreCart\System\Engine\RateLimiter::class);
+        $ipAddress = $request->getIpAddress();
+        if ($rateLimiter->isLimited($ipAddress, $email)) {
+            $remaining = $rateLimiter->getRemainingSeconds($ipAddress);
+            return JsonResponse::error("Too many login attempts. Try again in {$remaining} seconds", 429);
+        }
+
         /** @var SessionInterface $session */
         $session = $this->container->get(SessionInterface::class);
 
@@ -42,8 +50,11 @@ class AuthController
         $user = $customerService->login($email, $password);
 
         if (!$user) {
+            $rateLimiter->recordFailure($ipAddress, $email);
             return JsonResponse::error('Invalid credentials', 401);
         }
+
+        $rateLimiter->recordSuccess($ipAddress, $email);
 
         // Regenerate session to prevent fixation
         $session->regenerate();
@@ -71,17 +82,25 @@ class AuthController
 
         $dto = RegisterDTO::fromArray($request->getBody());
 
-        try {
+try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
             $id = $customerService->register($dto);
 
             /** @var SessionInterface $session */
             $session = $this->container->get(SessionInterface::class);
+
+            // Save guest session ID BEFORE regeneration
+            $guestSessionId = $session->getId();
+
             $session->regenerate();
 
             $session->set('customer_id', $id);
             $session->set('customer_username', $dto->username);
             $session->set('customer_email', $dto->email);
+
+            // Merge guest cart using the OLD session ID
+            $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);
+            $cartService->mergeGuestToCustomer($guestSessionId, $id);
 
             return JsonResponse::success(['customer_id' => $id], 'Registration successful', 201);
         } catch (\InvalidArgumentException $e) {

@@ -180,7 +180,7 @@ class ProductRepository
                 [
                     'pid'  => $id,
                     'name' => $product['name'],
-                    'desc' => $product['description'] ?? '',
+                    'desc' => $product['description'],
                 ]
             );
         }

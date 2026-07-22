@@ -40,7 +40,7 @@ spl_autoload_register(function (string $class): void {
             }
         } catch (\Throwable $e) {
             $logFile = DIR_LOGS . '/ocmod_errors.log';
-            $msg = date('Y-m-d H:i:s') . " | {$requestId} | {$class} | " . $e->getMessage() . PHP_EOL;
+            $msg = date('Y-m-d H:i:s') . " | " . REQUEST_ID . " | {$class} | " . $e->getMessage() . PHP_EOL;
             file_put_contents($logFile, $msg, FILE_APPEND | LOCK_EX);
             @unlink($cacheFile);
         }
@@ -76,7 +76,7 @@ $container = new \CoreCart\System\Engine\Container();
 $GLOBALS['corecart_container'] = $container;
 
 // Infrastructure
-$container->set(\CoreCart\System\Infrastructure\SessionInterface::class, fn() => new \CoreCart\System\Infrastructure\Session());
+$container->set(\CoreCart\System\Infrastructure\SessionInterface::class, fn() => new \CoreCart\System\Infrastructure\Session('CCSESSID_ADMIN'));
 $container->set(\CoreCart\System\Engine\Database::class, function () {
     return new \CoreCart\System\Engine\Database(
         $_ENV['DB_HOST'] ?? 'localhost',
@@ -99,9 +99,9 @@ $container->set(\CoreCart\System\Repository\AdminUserRepository::class, fn($c) =
 // Services
 $container->set(\CoreCart\System\Service\CatalogService::class, fn($c) => new \CoreCart\System\Service\CatalogService($c->get(\CoreCart\System\Repository\ProductRepository::class)));
 $container->set(\CoreCart\System\Service\CartService::class, fn($c) => new \CoreCart\System\Service\CartService($c->get(\CoreCart\System\Repository\CartRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class)));
-$container->set(\CoreCart\System\Service\OrderService::class, fn($c) => new \CoreCart\System\Service\OrderService($c->get(\CoreCart\System\Repository\OrderRepository::class), $c->get(\CoreCart\System\Repository\CartRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class), $c->get(\CoreCart\System\Repository\CustomerRepository::class), $c->get(\CoreCart\System\Repository\AddressRepository::class)));
+$container->set(\CoreCart\System\Service\OrderService::class, fn($c) => new \CoreCart\System\Service\OrderService($c->get(\CoreCart\System\Repository\OrderRepository::class)));
 $container->set(\CoreCart\System\Service\CustomerService::class, fn($c) => new \CoreCart\System\Service\CustomerService($c->get(\CoreCart\System\Repository\CustomerRepository::class), $c->get(\CoreCart\System\Repository\AddressRepository::class)));
-$container->set(\CoreCart\System\Service\CategoryService::class, fn($c) => new \CoreCart\System\Service\CategoryService($c->get(\CoreCart\System\Repository\CategoryRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class)));
+$container->set(\CoreCart\System\Service\CategoryService::class, fn($c) => new \CoreCart\System\Service\CategoryService($c->get(\CoreCart\System\Repository\CategoryRepository::class)));
 $container->set(\CoreCart\System\Service\DashboardService::class, fn($c) => new \CoreCart\System\Service\DashboardService($c->get(\CoreCart\System\Repository\AdminUserRepository::class), $c->get(\CoreCart\System\Repository\OrderRepository::class), $c->get(\CoreCart\System\Repository\CustomerRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class), $c->get(\CoreCart\System\Repository\CategoryRepository::class)));
 $container->set(\CoreCart\System\Service\SettingService::class, fn($c) => new \CoreCart\System\Service\SettingService($c->get(\CoreCart\System\Repository\SettingRepository::class)));
 
@@ -111,6 +111,7 @@ $container->set(\CoreCart\System\Engine\RateLimiter::class, fn($c) => new \CoreC
 $container->set(\CoreCart\System\Service\AuthService::class, fn($c) => new \CoreCart\System\Service\AuthService($c->get(\CoreCart\System\Repository\AdminUserRepository::class), $c->get(\CoreCart\System\Engine\RateLimiter::class)));
 $container->set(\CoreCart\System\Engine\AuthMiddleware::class, fn() => new \CoreCart\System\Engine\AuthMiddleware());
 $container->set(\CoreCart\System\Engine\CustomerAuthMiddleware::class, fn() => new \CoreCart\System\Engine\CustomerAuthMiddleware());
+$container->set(\CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class, fn() => new \CoreCart\System\Engine\OptionalCustomerAuthMiddleware());
 $container->set(\CoreCart\System\Engine\CsrfMiddleware::class, fn() => new \CoreCart\System\Engine\CsrfMiddleware());
 $container->set(\CoreCart\System\Engine\SecurityHeaders::class, fn() => new \CoreCart\System\Engine\SecurityHeaders());
 $container->set(\CoreCart\System\Engine\RequestMiddleware::class, fn() => new \CoreCart\System\Engine\RequestMiddleware());
