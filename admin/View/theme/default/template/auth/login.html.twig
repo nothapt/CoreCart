@@ -7,8 +7,8 @@
     <h1 class="cc-admin-auth-title">CoreCart</h1>
     <p class="cc-admin-auth-subtitle">Admin panel sign in</p>
 
-    <form method="post" action="/admin/auth/loginPost">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+    <form method="post" action="/admin/login">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
 
         <div class="cc-field">
             <label class="cc-label" for="login">Username or email</label>

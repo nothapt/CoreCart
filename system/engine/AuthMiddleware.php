@@ -19,21 +19,21 @@ class AuthMiddleware implements Middleware
         $userId = $session->get('admin_user_id');
 
         if (!$userId) {
-            return new JsonResponse(['error' => 'Authentication required'], 401);
+            return new RedirectResponse('/admin/login');
         }
 
         // Check absolute session lifetime
         $loginTime = $session->get('admin_login_time', 0);
         if (time() - $loginTime > $this->lifetime) {
             $session->invalidate();
-            return new JsonResponse(['error' => 'Session expired'], 401);
+            return new RedirectResponse('/admin/login');
         }
 
         // Check idle timeout
         $lastActivity = $session->get('admin_last_activity', 0);
         if (time() - $lastActivity > $this->idleTimeout) {
             $session->invalidate();
-            return new JsonResponse(['error' => 'Session expired due to inactivity'], 401);
+            return new RedirectResponse('/admin/login');
         }
 
         $session->set('admin_last_activity', time());
@@ -47,12 +47,12 @@ class AuthMiddleware implements Middleware
 
         if (empty($result)) {
             $session->invalidate();
-            return new JsonResponse(['error' => 'User not found'], 401);
+            return new RedirectResponse('/admin/login');
         }
 
         if ((int) $result[0]['status'] !== 1) {
             $session->invalidate();
-            return new JsonResponse(['error' => 'Account disabled'], 401);
+            return new RedirectResponse('/admin/login');
         }
 
         $user = new AuthenticatedUser(

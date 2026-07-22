@@ -3,54 +3,101 @@ declare(strict_types=1);
 
 namespace CoreCart\System\Route;
 
+use CoreCart\Catalog\Controller\CategoryController;
+use CoreCart\Catalog\Controller\HomeController;
+use CoreCart\Catalog\Controller\ProductController;
 use CoreCart\System\Engine\Router;
+use CoreCart\System\Engine\SecurityHeaders;
 
-class CatalogRouteProvider
+final class CatalogRouteProvider
 {
     public function register(Router $router): void
     {
         $public = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
+            SecurityHeaders::class,
         ];
 
         $router->addRoutes([
+            // Homepage
             '/' => [
-                'controller' => \CoreCart\Catalog\Controller\HomeController::class,
-                'method'     => 'index',
-                'middleware'  => $public,
-            ],
-            'catalog/home/index' => [
-                'controller' => \CoreCart\Catalog\Controller\HomeController::class,
-                'method'     => 'index',
-                'middleware'  => $public,
-            ],
-            'catalog/product' => [
-                'controller' => \CoreCart\Catalog\Controller\ProductController::class,
+                'controller' => HomeController::class,
                 'method'     => 'index',
                 'middleware'  => $public,
                 'methods'    => ['GET'],
             ],
-            'catalog/product/view' => [
-                'controller' => \CoreCart\Catalog\Controller\ProductController::class,
-                'method'     => 'view',
+
+            // Catalog: public and internal URLs
+            '/catalog' => [
+                'controller' => ProductController::class,
+                'method'     => 'index',
                 'middleware'  => $public,
                 'methods'    => ['GET'],
             ],
-            'catalog/product/search' => [
-                'controller' => \CoreCart\Catalog\Controller\ProductController::class,
+            '/catalog/product' => [
+                'controller' => ProductController::class,
+                'method'     => 'index',
+                'middleware'  => $public,
+                'methods'    => ['GET'],
+            ],
+
+            // Search
+            '/search' => [
+                'controller' => ProductController::class,
                 'method'     => 'search',
                 'middleware'  => $public,
                 'methods'    => ['GET'],
             ],
-            'catalog/category' => [
-                'controller' => \CoreCart\Catalog\Controller\CategoryController::class,
+            '/catalog/product/search' => [
+                'controller' => ProductController::class,
+                'method'     => 'search',
+                'middleware'  => $public,
+                'methods'    => ['GET'],
+            ],
+
+            // Product view
+            '/product' => [
+                'controller' => ProductController::class,
+                'method'     => 'view',
+                'middleware'  => $public,
+                'methods'    => ['GET'],
+            ],
+            '/catalog/product/view' => [
+                'controller' => ProductController::class,
+                'method'     => 'view',
+                'middleware'  => $public,
+                'methods'    => ['GET'],
+            ],
+
+            // Categories
+            '/categories' => [
+                'controller' => CategoryController::class,
                 'method'     => 'index',
                 'middleware'  => $public,
                 'methods'    => ['GET'],
             ],
-            'catalog/category/view' => [
-                'controller' => \CoreCart\Catalog\Controller\CategoryController::class,
+            '/catalog/category' => [
+                'controller' => CategoryController::class,
+                'method'     => 'index',
+                'middleware'  => $public,
+                'methods'    => ['GET'],
+            ],
+            '/category' => [
+                'controller' => CategoryController::class,
                 'method'     => 'view',
+                'middleware'  => $public,
+                'methods'    => ['GET'],
+            ],
+            '/catalog/category/view' => [
+                'controller' => CategoryController::class,
+                'method'     => 'view',
+                'middleware'  => $public,
+                'methods'    => ['GET'],
+            ],
+
+            // Backward compatibility
+            '/catalog/home/index' => [
+                'controller' => HomeController::class,
+                'method'     => 'index',
                 'middleware'  => $public,
                 'methods'    => ['GET'],
             ],

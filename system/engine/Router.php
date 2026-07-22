@@ -8,7 +8,9 @@ class Router
     private Container $container;
 
     /**
-     * @var array<string, array{controller: string, method: string, middleware: string[], methods: string[]}>
+     * Routes stored by path → HTTP method → config.
+     *
+     * @var array<string, array<string, array{controller: string, method: string, middleware: string[], methods: string[]}>>
      */
     private array $routes = [];
 
@@ -27,15 +29,22 @@ class Router
         string $controller,
         string $method = 'index',
         array $middleware = [],
-        array $methods = []
+        array $methods = [],
     ): void {
         $key = $this->normalizeRoute($route);
-        $this->routes[$key] = [
-            'controller' => $controller,
-            'method'     => $method,
-            'middleware'  => $middleware,
-            'methods'    => array_map('strtoupper', $methods),
-        ];
+
+        $httpMethods = $methods === []
+            ? ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+            : array_map('strtoupper', $methods);
+
+        foreach ($httpMethods as $httpMethod) {
+            $this->routes[$key][$httpMethod] = [
+                'controller' => $controller,
+                'method'     => $method,
+                'middleware'  => $middleware,
+                'methods'    => $httpMethods,
+            ];
+        }
     }
 
     /**
@@ -49,7 +58,7 @@ class Router
                 $config['controller'],
                 $config['method'],
                 $config['middleware'] ?? [],
-                $config['methods'] ?? []
+                $config['methods'] ?? [],
             );
         }
     }
@@ -80,24 +89,36 @@ class Router
         $httpMethod = $request->getMethod();
 
         if (!isset($this->routes[$route])) {
-            return new JsonResponse(['error' => 'Route not found'], 404);
-        }
-
-        $config = $this->routes[$route];
-
-        if (!empty($config['methods']) && !in_array($httpMethod, $config['methods'], true)) {
-            return new JsonResponse(
-                ['error' => 'Method not allowed', 'allowed' => $config['methods']],
-                405,
-                ['Allow' => implode(', ', $config['methods'])]
+            return new HtmlResponse(
+                '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                . '<title>Page not found</title></head><body>'
+                . '<h1>404</h1><p>Page not found.</p>'
+                . '<p><a href="/">Return to the storefront</a></p>'
+                . '</body></html>',
+                404,
             );
         }
+
+        if (!isset($this->routes[$route][$httpMethod])) {
+            $allowed = array_keys($this->routes[$route]);
+
+            return new JsonResponse(
+                [
+                    'error' => 'Method not allowed',
+                    'allowed' => $allowed,
+                ],
+                405,
+                ['Allow' => implode(', ', $allowed)],
+            );
+        }
+
+        $config = $this->routes[$route][$httpMethod];
 
         $className = $config['controller'];
         $methodName = $config['method'];
 
         if (!$this->isValidMethodName($methodName)) {
-            return new JsonResponse(['error' => 'Invalid method'], 404);
+            return new JsonResponse(['error' => 'Invalid method'], 400);
         }
 
         if (!class_exists($className)) {
@@ -157,12 +178,10 @@ class Router
     }
 
     /**
-     * Generate a URL for a named route.
+     * Generate a URL for a route.
      *
      * Replaces {param} placeholders with values from $params.
      * Remaining params are appended as query string.
-     *
-     * Example: $router->url('product/view', ['id' => 5]) → '/catalog/product/view?id=5'
      */
     public function url(string $route, array $params = []): string
     {
@@ -189,7 +208,7 @@ class Router
     }
 
     /**
-     * Register a named route (alias for addRoute with a name).
+     * Register a named route.
      */
     public function addNamedRoute(
         string $name,

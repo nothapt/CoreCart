@@ -32,8 +32,15 @@ class AdminRouteProvider
             \CoreCart\System\Engine\RequestMiddleware::class,
         ];
 
+        // Admin login: GET shows form, POST processes login
+        // Now supports both HTTP methods on the same path
+        $router->addRoute('/admin', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
+        $router->addRoute('/admin/', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
+        $router->addRoute('/admin/login', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
+        $router->addRoute('/admin/login', \CoreCart\Admin\Controller\AuthController::class, 'loginPost', $publicMutation, ['POST']);
+
         $router->addRoutes([
-            // Auth
+            // Auth (backward compatibility)
             'admin/auth/login' => [
                 'controller' => \CoreCart\Admin\Controller\AuthController::class,
                 'method'     => 'login',

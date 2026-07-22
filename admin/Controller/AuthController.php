@@ -51,7 +51,7 @@ class AuthController
             /** @var SessionInterface $session */
             $session = $this->container->get(SessionInterface::class);
             $session->set('flash_error', 'Please fill in all fields correctly');
-            return new RedirectResponse('/admin/auth/login');
+            return new RedirectResponse('/admin/login');
         }
 
         try {
@@ -74,7 +74,7 @@ class AuthController
             /** @var SessionInterface $session */
             $session = $this->container->get(SessionInterface::class);
             $session->set('flash_error', $e->getMessage());
-            return new RedirectResponse('/admin/auth/login');
+            return new RedirectResponse('/admin/login');
         }
     }
 
@@ -84,7 +84,7 @@ class AuthController
         $session = $this->container->get(SessionInterface::class);
         $session->invalidate();
 
-        $response = new RedirectResponse('/admin/auth/login');
+        $response = new RedirectResponse('/admin/login');
         $response->addCookie(session_name(), '', time() - 42000, '/');
         return $response;
     }

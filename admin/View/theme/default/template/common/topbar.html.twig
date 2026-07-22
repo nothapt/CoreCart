@@ -8,7 +8,7 @@
             <span class="cc-text-sm">{{ app.user.username|default('Admin') }}</span>
         {% endif %}
         <form method="post" action="/admin/auth/logout" style="display:inline;">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="cc-btn cc-btn-link cc-text-sm">Sign out</button>
         </form>
     </div>
