@@ -25,3 +25,4 @@
 *.swp
 *.swo
 .phpunit.result.cache
+composer.phar
