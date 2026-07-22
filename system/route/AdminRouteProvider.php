@@ -39,6 +39,18 @@ class AdminRouteProvider
         $router->addRoute('/admin/login', \CoreCart\Admin\Controller\AuthController::class, 'login', $publicForm, ['GET']);
         $router->addRoute('/admin/login', \CoreCart\Admin\Controller\AuthController::class, 'loginPost', $publicMutation, ['POST']);
 
+        // Product create: GET shows form, POST saves
+        $router->addRoute('/admin/product/create', \CoreCart\Admin\Controller\ProductController::class, 'create', $authenticated, ['GET']);
+        $router->addRoute('/admin/product/create', \CoreCart\Admin\Controller\ProductController::class, 'createPost', $authenticatedMutation, ['POST']);
+
+        // Category create: GET shows form, POST saves
+        $router->addRoute('/admin/category/create', \CoreCart\Admin\Controller\CategoryController::class, 'createForm', $authenticated, ['GET']);
+        $router->addRoute('/admin/category/create', \CoreCart\Admin\Controller\CategoryController::class, 'create', $authenticatedMutation, ['POST']);
+
+        // Category edit: GET shows form, POST saves
+        $router->addRoute('/admin/category/edit', \CoreCart\Admin\Controller\CategoryController::class, 'editForm', $authenticated, ['GET']);
+        $router->addRoute('/admin/category/edit', \CoreCart\Admin\Controller\CategoryController::class, 'update', $authenticatedMutation, ['POST']);
+
         $router->addRoutes([
             // Auth (backward compatibility)
             'admin/auth/login' => [

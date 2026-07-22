@@ -15,6 +15,7 @@ final class CatalogRouteProvider
     {
         $public = [
             SecurityHeaders::class,
+            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
         ];
 
         $router->addRoutes([

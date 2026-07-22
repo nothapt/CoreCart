@@ -1,0 +1,40 @@
+{% extends '@admin/layout/base.html.twig' %}
+{% block title %}{{ category.id is defined ? 'Edit' : 'Add' }} category — CoreCart Admin{% endblock %}
+{% block content %}
+<div class="cc-page-header">
+    <div>
+        <h1>{{ category.id is defined ? 'Edit category' : 'New category' }}</h1>
+        {% if category.name is defined %}<p>{{ category.name }}</p>{% endif %}
+    </div>
+    <div class="cc-flex cc-gap-2">
+        <a href="/admin/category/index" class="cc-btn cc-btn-secondary">Cancel</a>
+        <button type="submit" form="category-form" class="cc-btn cc-btn-primary">Save</button>
+    </div>
+</div>
+
+<form id="category-form" method="post" action="/admin/category/{{ category.id is defined ? 'edit' : 'create' }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    {% if category.id is defined %}
+        <input type="hidden" name="category_id" value="{{ category.id }}">
+    {% endif %}
+
+    <div class="cc-card cc-card-body">
+        <h3 class="cc-mb-4">General</h3>
+        <div class="cc-field">
+            <label class="cc-label" for="name">Name</label>
+            <input type="text" id="name" name="name" class="cc-input" value="{{ category.name|default('') }}" required>
+        </div>
+        <div class="cc-field">
+            <label class="cc-label" for="description">Description</label>
+            <textarea id="description" name="description" class="cc-input" rows="6">{{ category.description|default('') }}</textarea>
+        </div>
+        <div class="cc-field">
+            <label class="cc-label" for="status">Status</label>
+            <select id="status" name="status" class="cc-input">
+                <option value="1" {{ category.status|default(1) == 1 ? 'selected' : '' }}>Enabled</option>
+                <option value="0" {{ category.status|default(1) == 0 ? 'selected' : '' }}>Disabled</option>
+            </select>
+        </div>
+    </div>
+</form>
+{% endblock %}

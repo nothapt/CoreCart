@@ -3,55 +3,72 @@
 {% block title %}Dashboard — CoreCart Admin{% endblock %}
 
 {% block content %}
-<h1 class="cc-mb-4">Dashboard</h1>
+<div class="cc-page-header">
+    <h1><i class="fa-solid fa-gauge"></i> Dashboard</h1>
+</div>
 
-<div class="cc-grid cc-grid-4 cc-mb-8">
-    <div class="cc-card cc-card-body">
-        <div class="cc-text-muted cc-text-sm">Orders today</div>
-        <div class="cc-stat">{{ stats.orders_today|default(0) }}</div>
+<div class="cc-grid cc-grid-4">
+    <div class="cc-tile">
+        <div>
+            <div class="tile-title">Orders Today</div>
+            <div class="tile-value">{{ stats.orders_today|default(0) }}</div>
+        </div>
+        <div class="tile-icon"><i class="fa-solid fa-cart-shopping"></i></div>
     </div>
-    <div class="cc-card cc-card-body">
-        <div class="cc-text-muted cc-text-sm">Revenue today</div>
-        <div class="cc-stat">{{ stats.revenue_today|default('0.00') }} $</div>
+    <div class="cc-tile">
+        <div>
+            <div class="tile-title">Revenue Today</div>
+            <div class="tile-value">{{ stats.revenue_today|default('0.00') }} $</div>
+        </div>
+        <div class="tile-icon"><i class="fa-solid fa-dollar-sign"></i></div>
     </div>
-    <div class="cc-card cc-card-body">
-        <div class="cc-text-muted cc-text-sm">New customers</div>
-        <div class="cc-stat">{{ stats.customers_today|default(0) }}</div>
+    <div class="cc-tile">
+        <div>
+            <div class="tile-title">New Customers</div>
+            <div class="tile-value">{{ stats.customers_today|default(0) }}</div>
+        </div>
+        <div class="tile-icon"><i class="fa-solid fa-user-plus"></i></div>
     </div>
-    <div class="cc-card cc-card-body">
-        <div class="cc-text-muted cc-text-sm">Low stock products</div>
-        <div class="cc-stat">{{ stats.low_stock|default(0) }}</div>
+    <div class="cc-tile">
+        <div>
+            <div class="tile-title">Low Stock</div>
+            <div class="tile-value">{{ stats.low_stock|default(0) }}</div>
+        </div>
+        <div class="tile-icon"><i class="fa-solid fa-exclamation-triangle"></i></div>
     </div>
 </div>
 
-<h2 class="cc-mb-4">Recent orders</h2>
-{% if recent_orders is defined and recent_orders|length > 0 %}
-<table class="cc-table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Customer</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Date</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for order in recent_orders %}
-        <tr>
-            <td>#{{ order.id }}</td>
-            <td>{{ order.customer_name|default('Guest') }}</td>
-            <td><span class="cc-badge cc-badge-info">{{ order.status_label }}</span></td>
-            <td>{{ order.total }} $</td>
-            <td>{{ order.date_added }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-    {% include '@admin/common/empty-state.html.twig' with {
-        title: 'No orders yet',
-        message: 'Orders will appear here when customers start placing purchases.'
-    } %}
-{% endif %}
+<div class="cc-panel">
+    <div class="cc-panel-heading">
+        <i class="fa-solid fa-list"></i> Recent Orders
+    </div>
+    <div class="cc-panel-body">
+        {% if recent_orders is defined and recent_orders|length > 0 %}
+        <table class="cc-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.customer_name|default('Guest') }}</td>
+                    <td><span class="cc-badge cc-badge-info">{{ order.status_label }}</span></td>
+                    <td>{{ order.total }} $</td>
+                    <td>{{ order.date_added }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="cc-text-muted cc-text-center">No orders yet.</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

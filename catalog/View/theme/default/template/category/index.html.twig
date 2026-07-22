@@ -14,7 +14,7 @@
     <div class="cc-grid cc-grid-4">
         {% for product in products %}
         <article class="cc-product-card">
-            <a href="/product/{{ product.id }}">
+            <a href="/product?id={{ product.id }}">
                 <div class="cc-product-card-image">
                     {% if product.image %}
                         <img src="{{ product.image }}" alt="{{ product.name }}">
@@ -22,7 +22,7 @@
                 </div>
             </a>
             <div class="cc-product-card-body">
-                <a href="/product/{{ product.id }}" class="cc-product-card-name">{{ product.name }}</a>
+                <a href="/product?id={{ product.id }}" class="cc-product-card-name">{{ product.name }}</a>
                 <div class="cc-product-card-price">{{ product.price }} $</div>
             </div>
         </article>

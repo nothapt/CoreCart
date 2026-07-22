@@ -57,6 +57,11 @@ class StorefrontContextProvider
         $this->session->remove('flash_success');
         $this->session->remove('flash_error');
 
+        // Ensure CSRF token exists
+        if (!$this->session->has('csrf_token')) {
+            $this->session->set('csrf_token', bin2hex(random_bytes(32)));
+        }
+
         return [
             'app' => (object) [
                 'user'    => $user,

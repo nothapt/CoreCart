@@ -1,15 +1,12 @@
 <header class="cc-admin-topbar">
     <div class="cc-admin-topbar-left">
-        <span class="cc-text-sm cc-text-muted">{{ shop_name|default('CoreCart') }}</span>
+        <a href="/admin/dashboard" class="brand"><i class="fa-solid fa-cube"></i> CoreCart</a>
     </div>
     <div class="cc-admin-topbar-right">
-        <a href="/" target="_blank" class="cc-header-link cc-text-sm">Open store</a>
-        {% if app.user is defined and app.user %}
-            <span class="cc-text-sm">{{ app.user.username|default('Admin') }}</span>
-        {% endif %}
+        <a href="/" target="_blank"><i class="fa-solid fa-store"></i> Open store</a>
         <form method="post" action="/admin/auth/logout" style="display:inline;">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-            <button type="submit" class="cc-btn cc-btn-link cc-text-sm">Sign out</button>
+            <button type="submit" class="cc-btn-link" style="color:#6c757d; font-size:13px; border:none; background:none; cursor:pointer; padding:0;"><i class="fa-solid fa-sign-out-alt"></i> Sign out</button>
         </form>
     </div>
 </header>

@@ -106,6 +106,9 @@ $container->set(\CoreCart\System\View\TemplateRendererInterface::class, static f
     $c->get(\CoreCart\System\View\AssetResolver::class),
     filter_var(getenv('APP_DEBUG') ?: ($_ENV['APP_DEBUG'] ?? 'false'), FILTER_VALIDATE_BOOL),
 ));
+$container->set(\CoreCart\System\View\AdminContextProvider::class, static fn($c) => new \CoreCart\System\View\AdminContextProvider(
+    $c->get(\CoreCart\System\Infrastructure\SessionInterface::class),
+));
 
 // Middleware & Auth
 $container->set(\CoreCart\System\Engine\Validator::class, fn() => new \CoreCart\System\Engine\Validator());

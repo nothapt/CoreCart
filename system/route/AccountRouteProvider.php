@@ -36,32 +36,15 @@ class AccountRouteProvider
             \CoreCart\System\Engine\RequestMiddleware::class,
         ];
 
+        // Login: GET shows form, POST processes
+        $router->addRoute('/account/login', \CoreCart\Account\Controller\AuthController::class, 'login', $publicWithCsrf, ['GET']);
+        $router->addRoute('/account/login', \CoreCart\Account\Controller\AuthController::class, 'loginPost', $publicMutation, ['POST']);
+
+        // Register: GET shows form, POST processes
+        $router->addRoute('/account/register', \CoreCart\Account\Controller\AuthController::class, 'register', $publicWithCsrf, ['GET']);
+        $router->addRoute('/account/register', \CoreCart\Account\Controller\AuthController::class, 'registerPost', $publicMutation, ['POST']);
+
         $router->addRoutes([
-            // Auth (public)
-            'account/login' => [
-                'controller' => \CoreCart\Account\Controller\AuthController::class,
-                'method'     => 'login',
-                'middleware'  => $publicWithCsrf,
-                'methods'    => ['GET'],
-            ],
-            'account/loginPost' => [
-                'controller' => \CoreCart\Account\Controller\AuthController::class,
-                'method'     => 'loginPost',
-                'middleware'  => $publicMutation,
-                'methods'    => ['POST'],
-            ],
-            'account/register' => [
-                'controller' => \CoreCart\Account\Controller\AuthController::class,
-                'method'     => 'register',
-                'middleware'  => $publicWithCsrf,
-                'methods'    => ['GET'],
-            ],
-            'account/registerPost' => [
-                'controller' => \CoreCart\Account\Controller\AuthController::class,
-                'method'     => 'registerPost',
-                'middleware'  => $publicMutation,
-                'methods'    => ['POST'],
-            ],
             'account/logout' => [
                 'controller' => \CoreCart\Account\Controller\AuthController::class,
                 'method'     => 'logout',

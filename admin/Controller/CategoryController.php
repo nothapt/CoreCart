@@ -9,6 +9,7 @@ use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\View\AdminContextProvider;
 use CoreCart\System\View\TemplateRendererInterface;
 
 class CategoryController
@@ -23,22 +24,31 @@ class CategoryController
         $categoryService = $this->container->get(\CoreCart\System\Service\CategoryService::class);
         $data = $categoryService->getAllCategories($page);
 
-        /** @var SessionInterface $session */
-        $session = $this->container->get(SessionInterface::class);
-
-        $ctx = [
-            'categories'   => $data['categories'] ?? [],
-            'total'        => $data['total'] ?? 0,
-            'page'         => $data['page'] ?? 1,
-            'pages'        => $data['pages'] ?? 1,
-            'active_menu'  => 'category',
-            'csrf_token'   => $session->get('csrf_token', ''),
-            'shop_name'    => 'CoreCart',
-        ];
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['categories'] = $data['categories'] ?? [];
+        $ctx['total'] = $data['total'] ?? 0;
+        $ctx['page'] = $data['page'] ?? 1;
+        $ctx['pages'] = $data['pages'] ?? 1;
+        $ctx['active_menu'] = 'category';
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
         return new HtmlResponse($renderer->render('category/list.html.twig', $ctx));
+    }
+
+    public function createForm(Request $request): Response
+    {
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['category'] = [];
+        $ctx['active_menu'] = 'category';
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('category/form.html.twig', $ctx));
     }
 
     public function create(Request $request): Response
@@ -63,6 +73,31 @@ class CategoryController
         }
 
         return new RedirectResponse('/admin/category/index');
+    }
+
+    public function editForm(Request $request): Response
+    {
+        $id = (int) $request->getQueryParam('id', 0);
+        if ($id <= 0) {
+            return new RedirectResponse('/admin/category/index');
+        }
+
+        $categoryService = $this->container->get(\CoreCart\System\Service\CategoryService::class);
+        $category = $categoryService->getCategory($id);
+
+        if (!$category) {
+            return new RedirectResponse('/admin/category/index');
+        }
+
+        /** @var AdminContextProvider $context */
+        $context = $this->container->get(AdminContextProvider::class);
+        $ctx = $context->build();
+        $ctx['category'] = $category;
+        $ctx['active_menu'] = 'category';
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('category/form.html.twig', $ctx));
     }
 
     public function update(Request $request): Response

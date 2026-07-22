@@ -1,18 +1,15 @@
 <aside class="cc-admin-sidebar">
-    <a href="/admin/dashboard" class="cc-admin-logo">CoreCart</a>
+    <a href="/admin/dashboard" class="cc-admin-logo"><i class="fa-solid fa-cube"></i>CoreCart</a>
     <nav class="cc-admin-nav">
-        <a href="/admin/dashboard" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'dashboard' %}active{% endif %}">Dashboard</a>
+        <div class="cc-admin-nav-section-title">Core</div>
+        <a href="/admin/dashboard" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'dashboard' %}active{% endif %}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
 
-        <div class="cc-admin-nav-section">
-            <div class="cc-admin-nav-section-title">Catalog</div>
-            <a href="/admin/product/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'product' %}active{% endif %}">Products</a>
-            <a href="/admin/category/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'category' %}active{% endif %}">Categories</a>
-        </div>
+        <div class="cc-admin-nav-section-title">Catalog</div>
+        <a href="/admin/product/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'product' %}active{% endif %}"><i class="fa-solid fa-tags"></i> Products</a>
+        <a href="/admin/category/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'category' %}active{% endif %}"><i class="fa-solid fa-folder"></i> Categories</a>
 
-        <div class="cc-admin-nav-section">
-            <div class="cc-admin-nav-section-title">Sales</div>
-            <a href="/admin/order/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'order' %}active{% endif %}">Orders</a>
-            <a href="/admin/customer/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'customer' %}active{% endif %}">Customers</a>
-        </div>
+        <div class="cc-admin-nav-section-title">Sales</div>
+        <a href="/admin/order/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'order' %}active{% endif %}"><i class="fa-solid fa-shopping-cart"></i> Orders</a>
+        <a href="/admin/customer/index" class="cc-admin-nav-link {% if active_menu is defined and active_menu == 'customer' %}active{% endif %}"><i class="fa-solid fa-users"></i> Customers</a>
     </nav>
 </aside>

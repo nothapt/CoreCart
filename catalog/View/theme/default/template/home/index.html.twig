@@ -17,7 +17,7 @@
     <div class="cc-grid cc-grid-4">
         {% for category in categories %}
         <article class="cc-product-card">
-            <a href="/category/{{ category.id }}">
+            <a href="/category?id={{ category.id }}">
                 <div class="cc-product-card-image cc-product-card-image-4x3">
                     {% if category.image %}
                         <img src="{{ category.image }}" alt="{{ category.name }}">
@@ -27,7 +27,7 @@
                 </div>
             </a>
             <div class="cc-product-card-body">
-                <a href="/category/{{ category.id }}" class="cc-product-card-name">{{ category.name }}</a>
+                <a href="/category?id={{ category.id }}" class="cc-product-card-name">{{ category.name }}</a>
                 {% if category.product_count is defined %}
                     <div class="cc-text-xs cc-text-muted">{{ category.product_count }} products</div>
                 {% endif %}
@@ -44,7 +44,7 @@
     <div class="cc-grid cc-grid-4">
         {% for product in products %}
         <article class="cc-product-card">
-            <a href="/product/{{ product.id }}">
+            <a href="/product?id={{ product.id }}">
                 <div class="cc-product-card-image">
                     {% if product.image %}
                         <img src="{{ product.image }}" alt="{{ product.name }}">
@@ -52,7 +52,7 @@
                 </div>
             </a>
             <div class="cc-product-card-body">
-                <a href="/product/{{ product.id }}" class="cc-product-card-name">{{ product.name }}</a>
+                <a href="/product?id={{ product.id }}" class="cc-product-card-name">{{ product.name }}</a>
                 <div class="cc-product-card-price">{{ product.price }} $</div>
                 {% if product.stock_status is defined %}
                     <span class="cc-badge cc-badge-success">In stock</span>

@@ -1,4 +1,4 @@
-/* CoreCart Admin Layout */
+/* CoreCart Admin Layout — OpenCart Style */
 .cc-admin-body { margin: 0; }
 .cc-admin-shell { display: flex; min-height: 100vh; }
 
@@ -17,35 +17,49 @@
     overflow-y: auto;
 }
 .cc-admin-logo {
-    display: block;
-    padding: var(--cc-space-4);
-    font-size: var(--cc-font-size-lg);
-    font-weight: var(--cc-font-weight-bold);
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--cc-admin-sidebar-text-active);
     text-decoration: none;
+    background: rgba(0,0,0,0.15);
 }
 .cc-admin-logo:hover { color: var(--cc-admin-sidebar-text-active); text-decoration: none; }
-.cc-admin-nav { flex: 1; padding: 0 var(--cc-space-2); }
-.cc-admin-nav-section { margin-top: var(--cc-space-4); }
+.cc-admin-logo i { margin-right: 10px; font-size: 20px; }
+
+.cc-admin-nav { flex: 1; padding: 10px 0; }
+.cc-admin-nav-section { margin-top: 5px; }
 .cc-admin-nav-section-title {
-    font-size: var(--cc-font-size-xs);
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--cc-admin-sidebar-text);
-    opacity: 0.6;
-    padding: var(--cc-space-2) var(--cc-space-3);
+    color: #6a778e;
+    padding: 15px 20px 5px 20px;
+    letter-spacing: 0.5px;
 }
 .cc-admin-nav-link {
-    display: block;
-    padding: var(--cc-space-2) var(--cc-space-3);
-    font-size: var(--cc-font-size-sm);
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    font-size: 13px;
     color: var(--cc-admin-sidebar-text);
     text-decoration: none;
-    border-radius: var(--cc-radius-sm);
-    transition: background var(--cc-transition-fast);
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
 }
-.cc-admin-nav-link:hover { background: var(--cc-admin-sidebar-hover); color: var(--cc-admin-sidebar-text-active); text-decoration: none; }
-.cc-admin-nav-link.active { background: var(--cc-admin-sidebar-active); color: var(--cc-admin-sidebar-text-active); font-weight: var(--cc-font-weight-medium); }
+.cc-admin-nav-link i { width: 20px; margin-right: 8px; font-size: 14px; text-align: center; }
+.cc-admin-nav-link:hover {
+    color: var(--cc-admin-sidebar-text-active);
+    background: var(--cc-admin-sidebar-hover);
+    text-decoration: none;
+}
+.cc-admin-nav-link.active {
+    color: var(--cc-admin-sidebar-text-active);
+    background: var(--cc-admin-sidebar-active);
+    border-left-color: var(--cc-color-primary);
+}
 
 /* Main */
 .cc-admin-main { flex: 1; margin-left: var(--cc-admin-sidebar-width); display: flex; flex-direction: column; }
@@ -58,27 +72,67 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 var(--cc-space-6);
+    padding: 0 20px;
     position: sticky;
     top: 0;
     z-index: 100;
 }
-.cc-admin-topbar-right { display: flex; align-items: center; gap: var(--cc-space-4); }
+.cc-admin-topbar-left { display: flex; align-items: center; gap: 15px; }
+.cc-admin-topbar-left .brand { font-size: 16px; font-weight: 700; color: var(--cc-admin-sidebar); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.cc-admin-topbar-left .brand:hover { text-decoration: none; }
+.cc-admin-topbar-right { display: flex; align-items: center; gap: 15px; }
+.cc-admin-topbar-right a { color: #6c757d; text-decoration: none; font-size: 13px; }
+.cc-admin-topbar-right a:hover { color: var(--cc-admin-sidebar); }
 
 /* Content */
-.cc-admin-content { padding: var(--cc-space-6); flex: 1; }
+.cc-admin-content { padding: 20px; flex: 1; }
 
 /* Auth page */
 .cc-admin-auth { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--cc-color-background); }
 .cc-admin-auth-wrapper { width: 100%; max-width: 400px; padding: var(--cc-space-4); }
-.cc-admin-auth-card { background: var(--cc-color-surface); border: 1px solid var(--cc-color-border); border-radius: var(--cc-radius-md); box-shadow: var(--cc-shadow-sm); padding: var(--cc-space-8); }
-.cc-admin-auth-title { text-align: center; margin-bottom: var(--cc-space-1); }
-.cc-admin-auth-subtitle { text-align: center; color: var(--cc-color-text-muted); margin-bottom: var(--cc-space-6); }
+.cc-admin-auth-card { background: var(--cc-color-surface); border: 1px solid var(--cc-color-border); border-radius: var(--cc-radius-md); padding: 30px; }
+.cc-admin-auth-title { text-align: center; margin-bottom: var(--cc-space-1); font-size: 22px; }
+.cc-admin-auth-subtitle { text-align: center; color: var(--cc-color-text-muted); margin-bottom: var(--cc-space-6); font-size: 13px; }
 
 /* Page header */
-.cc-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--cc-space-6); }
-.cc-page-header h1 { margin-bottom: var(--cc-space-1); }
+.cc-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.cc-page-header h1 { margin-bottom: 5px; }
 .cc-page-header p { color: var(--cc-color-text-muted); margin-bottom: 0; }
+
+/* OpenCart tiles (stat cards) */
+.cc-tile {
+    background: var(--cc-color-surface);
+    border: 1px solid var(--cc-color-border);
+    border-radius: var(--cc-radius-md);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.cc-tile .tile-title { font-size: 11px; text-transform: uppercase; color: var(--cc-color-text-muted); font-weight: 600; }
+.cc-tile .tile-value { font-size: 22px; font-weight: 700; color: #444444; margin-top: 5px; }
+.cc-tile .tile-icon { color: #dee2e6; font-size: 40px; }
+
+/* OpenCart panel */
+.cc-panel {
+    background: var(--cc-color-surface);
+    border: 1px solid var(--cc-color-border);
+    border-radius: var(--cc-radius-md);
+    margin-bottom: 20px;
+}
+.cc-panel-heading {
+    background: #f8f9fa;
+    border-bottom: 1px solid var(--cc-color-border);
+    padding: 10px 15px;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cc-panel-body { padding: 15px; }
 
 @media (max-width: 767px) {
     .cc-admin-sidebar { transform: translateX(-100%); }
