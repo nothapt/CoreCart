@@ -37,11 +37,8 @@ class HealthController
             $allOk = false;
         }
 
-        // Check installed.lock
+        // Check installed.lock (informational only, does not affect readiness)
         $checks['installed'] = file_exists(DIR_STORAGE . '/installed.lock') ? 'ok' : 'not installed';
-        if ($checks['installed'] !== 'ok') {
-            $allOk = false;
-        }
 
         return new JsonResponse(
             ['status' => $allOk ? 'ok' : 'degraded', 'checks' => $checks],
