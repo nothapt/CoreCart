@@ -17,14 +17,17 @@ require_once DIR_ROOT . '/vendor/autoload.php';
 
 // Parse command-line arguments (--key=value)
 $args = [];
-foreach ($argv as $arg) {
+$argvList = $argv ?? [];
+foreach ($argvList as $arg) {
     if (str_starts_with($arg, '--')) {
-        [$key, $value] = explode('=', substr($arg, 2), 2);
-        $args[$key] = $value ?? '';
+        $parts = explode('=', substr($arg, 2), 2);
+        $key = $parts[0];
+        $value = $parts[1] ?? '';
+        $args[$key] = $value;
     }
 }
 
-$command = $argv[1] ?? 'help';
+$command = ($argv ?? [])[1] ?? 'help';
 
 match ($command) {
     'install' => runInstall($args),
@@ -160,9 +163,7 @@ function importSchema(PDO $pdo, string $sqlFile): void
     $statements = array_filter(array_map('trim', explode(';', $sql)));
 
     foreach ($statements as $statement) {
-        if (!empty($statement)) {
-            $pdo->exec($statement);
-        }
+        $pdo->exec($statement);
     }
 }
 

@@ -40,7 +40,7 @@ spl_autoload_register(function (string $class): void {
             }
         } catch (\Throwable $e) {
             $logFile = DIR_LOGS . '/ocmod_errors.log';
-            $msg = date('Y-m-d H:i:s') . " | {$requestId} | {$class} | " . $e->getMessage() . PHP_EOL;
+            $msg = date('Y-m-d H:i:s') . ' | ' . REQUEST_ID . ' | ' . $class . ' | ' . $e->getMessage() . PHP_EOL;
             file_put_contents($logFile, $msg, FILE_APPEND | LOCK_EX);
             @unlink($cacheFile);
         }
