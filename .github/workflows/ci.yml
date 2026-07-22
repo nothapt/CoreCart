@@ -225,7 +225,25 @@ jobs:
           curl --fail-with-body --show-error http://127.0.0.1:8080/catalog/category
           curl --fail-with-body --show-error http://127.0.0.1:8080/cart/count
 
+      - name: Test admin routing
+        run: curl --fail-with-body --show-error http://127.0.0.1:8080/admin/auth/login
+
       - name: Stop server
         if: always()
         run: |
           kill $(cat /tmp/corecart-server.pid) 2>/dev/null || true
+
+  docker:
+    name: Docker build
+    needs: quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose -f docker/docker-compose.yml config
+
+      - name: Build PHP image
+        run: docker build -f docker/Dockerfile -t corecart-test .

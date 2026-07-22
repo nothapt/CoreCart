@@ -9,10 +9,6 @@ class AdminRouteProvider
 {
     public function register(Router $router): void
     {
-        $public = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-        ];
-
         $publicForm = [
             \CoreCart\System\Engine\SecurityHeaders::class,
             \CoreCart\System\Engine\CsrfMiddleware::class,

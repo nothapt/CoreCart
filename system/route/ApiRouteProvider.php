@@ -13,26 +13,9 @@ class ApiRouteProvider
             \CoreCart\System\Engine\SecurityHeaders::class,
         ];
 
-        $withCsrf = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\CsrfMiddleware::class,
-        ];
-
-        $withRequest = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\CsrfMiddleware::class,
-            \CoreCart\System\Engine\RequestMiddleware::class,
-        ];
-
         $optionalCustomer = [
             \CoreCart\System\Engine\SecurityHeaders::class,
             \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
-        ];
-
-        $optionalCustomerWithCsrf = [
-            \CoreCart\System\Engine\SecurityHeaders::class,
-            \CoreCart\System\Engine\OptionalCustomerAuthMiddleware::class,
-            \CoreCart\System\Engine\CsrfMiddleware::class,
         ];
 
         $optionalCustomerMutation = [
@@ -143,6 +126,14 @@ class ApiRouteProvider
             'api/checkout/success' => [
                 'controller' => \CoreCart\Checkout\Controller\CheckoutController::class,
                 'method'     => 'success',
+                'middleware'  => $optionalCustomer,
+                'methods'    => ['GET'],
+            ],
+
+            // Security
+            'api/csrf-token' => [
+                'controller' => \CoreCart\Cart\Controller\CartController::class,
+                'method'     => 'csrfToken',
                 'middleware'  => $optionalCustomer,
                 'methods'    => ['GET'],
             ],

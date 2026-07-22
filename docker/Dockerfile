@@ -28,5 +28,9 @@ RUN composer install \
 
 COPY . .
 
-RUN mkdir -p storage/cache storage/logs && \
-    chmod -R 775 storage || true
+RUN mkdir -p \
+        storage/cache \
+        storage/logs \
+        storage/uploads \
+    && chown -R www-data:www-data storage \
+    && chmod -R 775 storage
