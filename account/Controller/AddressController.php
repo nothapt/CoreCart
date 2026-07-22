@@ -32,7 +32,7 @@ class AddressController
         $data['addresses'] = $addresses;
 
         $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('account/profile', $data));
+        return new HtmlResponse($renderer->render('account/profile.html.twig', $data));
     }
 
     public function create(Request $request): Response
@@ -46,7 +46,7 @@ class AddressController
             $context = $this->container->get(\CoreCart\System\View\StorefrontContextProvider::class);
             $data = $context->build($request);
             $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
-            return new HtmlResponse($renderer->render('account/profile', $data));
+            return new HtmlResponse($renderer->render('account/profile.html.twig', $data));
         }
 
         $dto = AddressDTO::fromArray($request->getBody());
@@ -83,7 +83,7 @@ class AddressController
             $context = $this->container->get(\CoreCart\System\View\StorefrontContextProvider::class);
             $data = $context->build($request);
             $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
-            return new HtmlResponse($renderer->render('account/profile', $data));
+            return new HtmlResponse($renderer->render('account/profile.html.twig', $data));
         }
 
         $dto = AddressDTO::fromArray($request->getBody());

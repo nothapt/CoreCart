@@ -29,7 +29,7 @@ class AuthController
         $data = $context->build($request);
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('account/login', $data));
+        return new HtmlResponse($renderer->render('account/login.html.twig', $data));
     }
 
     public function loginPost(Request $request): Response
@@ -90,7 +90,7 @@ class AuthController
         $data = $context->build($request);
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('account/register', $data));
+        return new HtmlResponse($renderer->render('account/register.html.twig', $data));
     }
 
     public function registerPost(Request $request): Response

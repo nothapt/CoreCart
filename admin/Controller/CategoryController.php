@@ -38,7 +38,7 @@ class CategoryController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('category/list', $ctx));
+        return new HtmlResponse($renderer->render('category/list.html.twig', $ctx));
     }
 
     public function create(Request $request): Response

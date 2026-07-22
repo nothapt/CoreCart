@@ -42,7 +42,7 @@ class CustomerController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('customer/list', $ctx));
+        return new HtmlResponse($renderer->render('customer/list.html.twig', $ctx));
     }
 
     public function view(Request $request): Response
@@ -71,6 +71,6 @@ class CustomerController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('customer/view', $data));
+        return new HtmlResponse($renderer->render('customer/view.html.twig', $data));
     }
 }

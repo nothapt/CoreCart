@@ -37,7 +37,7 @@ class AccountController
         $data['customer'] = $customer;
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('account/profile', $data));
+        return new HtmlResponse($renderer->render('account/profile.html.twig', $data));
     }
 
     public function password(Request $request): Response

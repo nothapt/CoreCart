@@ -31,7 +31,7 @@ class ProductController
         $ctx['breadcrumbs'] = [['name' => 'Home', 'url' => '/'], ['name' => 'Catalog']];
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('category/index', $ctx));
+        return new HtmlResponse($renderer->render('category/index.html.twig', $ctx));
     }
 
     public function view(Request $request): Response
@@ -58,7 +58,7 @@ class ProductController
         ];
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('product/view', $data));
+        return new HtmlResponse($renderer->render('product/view.html.twig', $data));
     }
 
     public function search(Request $request): Response
@@ -85,6 +85,6 @@ class ProductController
         ];
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('category/index', $ctx));
+        return new HtmlResponse($renderer->render('category/index.html.twig', $ctx));
     }
 }

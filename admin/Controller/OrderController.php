@@ -49,7 +49,7 @@ class OrderController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('order/list', $ctx));
+        return new HtmlResponse($renderer->render('order/list.html.twig', $ctx));
     }
 
     public function view(Request $request): Response
@@ -78,7 +78,7 @@ class OrderController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('order/view', $data));
+        return new HtmlResponse($renderer->render('order/view.html.twig', $data));
     }
 
     public function updateStatus(Request $request): Response

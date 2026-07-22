@@ -29,7 +29,7 @@ class CategoryController
             $data['categories'] = $categories;
 
             $renderer = $this->container->get(TemplateRendererInterface::class);
-            return new HtmlResponse($renderer->render('category/index', $data));
+            return new HtmlResponse($renderer->render('category/index.html.twig', $data));
         }
 
         $categoryService = $this->container->get(\CoreCart\System\Service\CategoryService::class);
@@ -56,7 +56,7 @@ class CategoryController
         ];
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('category/index', $data));
+        return new HtmlResponse($renderer->render('category/index.html.twig', $data));
     }
 
     public function view(Request $request): Response

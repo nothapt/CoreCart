@@ -35,6 +35,6 @@ class HomeController
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
 
-        return new HtmlResponse($renderer->render('home/index', $data));
+        return new HtmlResponse($renderer->render('home/index.html.twig', $data));
     }
 }

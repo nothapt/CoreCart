@@ -29,6 +29,6 @@ class SettingController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('setting/index', $data));
+        return new HtmlResponse($renderer->render('setting/index.html.twig', $data));
     }
 }

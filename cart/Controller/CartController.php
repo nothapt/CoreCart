@@ -32,7 +32,7 @@ class CartController
         $data['item_count'] = $cart['item_count'] ?? 0;
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('cart/index', $data));
+        return new HtmlResponse($renderer->render('cart/index.html.twig', $data));
     }
 
     public function add(Request $request): Response

@@ -34,7 +34,7 @@ class AuthController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('auth/login', $data));
+        return new HtmlResponse($renderer->render('auth/login.html.twig', $data));
     }
 
     public function loginPost(Request $request): Response

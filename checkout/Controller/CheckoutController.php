@@ -44,7 +44,7 @@ class CheckoutController
         $data['customer'] = $customer;
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('checkout/index', $data));
+        return new HtmlResponse($renderer->render('checkout/index.html.twig', $data));
     }
 
     public function confirm(Request $request): Response
@@ -111,7 +111,7 @@ class CheckoutController
         $data['order'] = $order;
 
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('checkout/success', $data));
+        return new HtmlResponse($renderer->render('checkout/success.html.twig', $data));
     }
 
     public function csrfToken(Request $request): Response

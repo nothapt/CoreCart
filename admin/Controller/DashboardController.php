@@ -39,6 +39,6 @@ class DashboardController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('dashboard/index', $data));
+        return new HtmlResponse($renderer->render('dashboard/index.html.twig', $data));
     }
 }

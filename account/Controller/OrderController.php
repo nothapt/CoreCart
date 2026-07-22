@@ -33,7 +33,7 @@ class OrderController
         $ctx['pages'] = $data['pages'] ?? 1;
 
         $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
-        return new \CoreCart\System\Engine\HtmlResponse($renderer->render('account/profile', $ctx));
+        return new \CoreCart\System\Engine\HtmlResponse($renderer->render('account/profile.html.twig', $ctx));
     }
 
     public function view(Request $request): Response
@@ -60,6 +60,6 @@ class OrderController
         $data['order'] = $order;
 
         $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
-        return new \CoreCart\System\Engine\HtmlResponse($renderer->render('account/profile', $data));
+        return new \CoreCart\System\Engine\HtmlResponse($renderer->render('account/profile.html.twig', $data));
     }
 }

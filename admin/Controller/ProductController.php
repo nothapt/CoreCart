@@ -38,7 +38,7 @@ class ProductController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('product/list', $ctx));
+        return new HtmlResponse($renderer->render('product/list.html.twig', $ctx));
     }
 
     public function create(Request $request): Response
@@ -55,7 +55,7 @@ class ProductController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('product/form', $data));
+        return new HtmlResponse($renderer->render('product/form.html.twig', $data));
     }
 
     public function createPost(Request $request): Response
@@ -108,7 +108,7 @@ class ProductController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('product/form', $data));
+        return new HtmlResponse($renderer->render('product/form.html.twig', $data));
     }
 
     public function update(Request $request): Response

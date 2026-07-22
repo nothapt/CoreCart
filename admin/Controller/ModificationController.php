@@ -29,6 +29,6 @@ class ModificationController
 
         /** @var TemplateRendererInterface $renderer */
         $renderer = $this->container->get(TemplateRendererInterface::class);
-        return new HtmlResponse($renderer->render('modification/index', $data));
+        return new HtmlResponse($renderer->render('modification/index.html.twig', $data));
     }
 }
