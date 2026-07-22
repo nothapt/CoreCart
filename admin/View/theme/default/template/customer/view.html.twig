@@ -1,0 +1,17 @@
+{% extends '@admin/layout/base.html.twig' %}
+{% block title %}Покупатель {{ customer.firstname|default('') }} — CoreCart Admin{% endblock %}
+{% block content %}
+<div class="cc-page-header">
+    <div>
+        <h1>{{ customer.firstname|default('') }} {{ customer.lastname|default('') }}</h1>
+        <p>{{ customer.email|default('') }}</p>
+    </div>
+    <a href="/admin/customer/index" class="cc-btn cc-btn-secondary">Назад к списку</a>
+</div>
+
+<div class="cc-card cc-card-body">
+    <h3 class="cc-mb-4">Основная информация</h3>
+    <p class="cc-text-sm"><strong>Email:</strong> {{ customer.email|default('—') }}</p>
+    <p class="cc-text-sm"><strong>Дата регистрации:</strong> {{ customer.date_added|default('—') }}</p>
+</div>
+{% endblock %}

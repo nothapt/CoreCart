@@ -1,0 +1,15 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}Страница не найдена — CoreCart{% endblock %}
+
+{% block content %}
+<div class="cc-empty">
+    <div class="cc-empty-title" style="font-size:var(--cc-font-size-4xl);">404</div>
+    <h2>Страница не найдена</h2>
+    <p>Возможно, ссылка устарела или адрес введён неправильно.</p>
+    <div class="cc-flex cc-gap-2 cc-text-center" style="justify-content:center;">
+        <a href="/" class="cc-btn cc-btn-primary">На главную</a>
+        <a href="/catalog" class="cc-btn cc-btn-secondary">Перейти в каталог</a>
+    </div>
+</div>
+{% endblock %}

@@ -98,6 +98,15 @@ $container->set(\CoreCart\System\Service\CategoryService::class, fn($c) => new \
 $container->set(\CoreCart\System\Service\DashboardService::class, fn($c) => new \CoreCart\System\Service\DashboardService($c->get(\CoreCart\System\Repository\AdminUserRepository::class), $c->get(\CoreCart\System\Repository\OrderRepository::class), $c->get(\CoreCart\System\Repository\CustomerRepository::class), $c->get(\CoreCart\System\Repository\ProductRepository::class), $c->get(\CoreCart\System\Repository\CategoryRepository::class)));
 $container->set(\CoreCart\System\Service\SettingService::class, fn($c) => new \CoreCart\System\Service\SettingService($c->get(\CoreCart\System\Repository\SettingRepository::class)));
 
+// View (Twig)
+$container->set(\CoreCart\System\View\ThemeResolver::class, fn() => new \CoreCart\System\View\ThemeResolver('admin', 'default'));
+$container->set(\CoreCart\System\View\AssetResolver::class, fn($c) => new \CoreCart\System\View\AssetResolver($c->get(\CoreCart\System\View\ThemeResolver::class)));
+$container->set(\CoreCart\System\View\TwigRenderer::class, fn($c) => new \CoreCart\System\View\TwigRenderer(
+    $c->get(\CoreCart\System\View\ThemeResolver::class),
+    $c->get(\CoreCart\System\View\AssetResolver::class),
+    ($_ENV['APP_DEBUG'] ?? 'false') === 'true',
+));
+
 // Middleware & Auth
 $container->set(\CoreCart\System\Engine\Validator::class, fn() => new \CoreCart\System\Engine\Validator());
 $container->set(\CoreCart\System\Engine\RateLimiter::class, fn($c) => new \CoreCart\System\Engine\RateLimiter($c->get(\CoreCart\System\Engine\Database::class)));

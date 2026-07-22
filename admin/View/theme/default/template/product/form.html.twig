@@ -1,0 +1,68 @@
+{% extends '@admin/layout/base.html.twig' %}
+{% block title %}{{ product.id is defined ? 'Редактирование' : 'Создание' }} товара — CoreCart Admin{% endblock %}
+{% block content %}
+<div class="cc-page-header">
+    <div>
+        <h1>{{ product.id is defined ? 'Редактирование товара' : 'Новый товар' }}</h1>
+        {% if product.name is defined %}<p>{{ product.name }}</p>{% endif %}
+    </div>
+    <div class="cc-flex cc-gap-2">
+        <a href="/admin/product/index" class="cc-btn cc-btn-secondary">Отмена</a>
+        <button type="submit" form="product-form" class="cc-btn cc-btn-primary">Сохранить</button>
+    </div>
+</div>
+
+<form id="product-form" method="post" action="/admin/product/{{ product.id is defined ? 'update' : 'create' }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+    {% if product.id is defined %}
+        <input type="hidden" name="product_id" value="{{ product.id }}">
+    {% endif %}
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:var(--cc-space-6);">
+        <div>
+            <div class="cc-card cc-card-body cc-mb-4">
+                <h3 class="cc-mb-4">Основное</h3>
+                <div class="cc-field">
+                    <label class="cc-label" for="name">Название</label>
+                    <input type="text" id="name" name="name" class="cc-input" value="{{ product.name|default('') }}" required>
+                </div>
+                <div class="cc-field">
+                    <label class="cc-label" for="description">Описание</label>
+                    <textarea id="description" name="description" class="cc-input" rows="6">{{ product.description|default('') }}</textarea>
+                </div>
+                <div class="cc-field">
+                    <label class="cc-label" for="model">Model</label>
+                    <input type="text" id="model" name="model" class="cc-input" value="{{ product.model|default('') }}">
+                </div>
+            </div>
+
+            <div class="cc-card cc-card-body">
+                <h3 class="cc-mb-4">Цена и склад</h3>
+                <div class="cc-grid cc-grid-2">
+                    <div class="cc-field">
+                        <label class="cc-label" for="price">Цена</label>
+                        <input type="number" id="price" name="price" class="cc-input" value="{{ product.price|default('0') }}" step="0.01" min="0" required>
+                    </div>
+                    <div class="cc-field">
+                        <label class="cc-label" for="quantity">Количество</label>
+                        <input type="number" id="quantity" name="quantity" class="cc-input" value="{{ product.quantity|default('0') }}" min="0" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="cc-card cc-card-body">
+                <h3 class="cc-mb-4">Статус</h3>
+                <div class="cc-field">
+                    <label class="cc-label" for="status">Статус</label>
+                    <select id="status" name="status" class="cc-input">
+                        <option value="1" {{ product.status|default(1) == 1 ? 'selected' : '' }}>Включён</option>
+                        <option value="0" {{ product.status|default(1) == 0 ? 'selected' : '' }}>Выключен</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends '@admin/layout/base.html.twig' %}
+{% block title %}Товары — CoreCart Admin{% endblock %}
+{% block content %}
+<div class="cc-page-header">
+    <div>
+        <h1>Товары</h1>
+        <p>Управление товарами каталога.</p>
+    </div>
+    <a href="/admin/product/create" class="cc-btn cc-btn-primary">Добавить товар</a>
+</div>
+
+{% if products is defined and products|length > 0 %}
+<table class="cc-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Товар</th>
+            <th>Model</th>
+            <th>Цена</th>
+            <th>Остаток</th>
+            <th>Статус</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.model|default('—') }}</td>
+            <td>{{ product.price }} ₽</td>
+            <td>{{ product.quantity }}</td>
+            <td>
+                {% if product.status == 1 %}
+                    <span class="cc-badge cc-badge-success">Включён</span>
+                {% else %}
+                    <span class="cc-badge cc-badge-neutral">Выключен</span>
+                {% endif %}
+            </td>
+            <td><a href="/admin/product/edit?id={{ product.id }}" class="cc-btn cc-btn-secondary">Редактировать</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    {% include '@admin/common/empty-state.html.twig' with {
+        title: 'Товаров нет',
+        message: 'Добавьте первый товар, чтобы он появился в каталоге.',
+        action_url: '/admin/product/create',
+        action_text: 'Добавить товар'
+    } %}
+{% endif %}
+{% endblock %}

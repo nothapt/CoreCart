@@ -1,0 +1,7 @@
+<div class="cc-empty">
+    <div class="cc-empty-title">{{ title|default('Пусто') }}</div>
+    <p>{{ message|default('Здесь пока ничего нет.') }}</p>
+    {% if action_url is defined and action_url %}
+        <a href="{{ action_url }}" class="cc-btn cc-btn-primary">{{ action_text|default('Перейти') }}</a>
+    {% endif %}
+</div>

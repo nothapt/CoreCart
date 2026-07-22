@@ -1,0 +1,57 @@
+{% extends '@admin/layout/base.html.twig' %}
+
+{% block title %}Панель управления — CoreCart Admin{% endblock %}
+
+{% block content %}
+<h1 class="cc-mb-4">Панель управления</h1>
+
+<div class="cc-grid cc-grid-4 cc-mb-8">
+    <div class="cc-card cc-card-body">
+        <div class="cc-text-muted cc-text-sm">Заказы сегодня</div>
+        <div style="font-size:var(--cc-font-size-3xl);font-weight:var(--cc-font-weight-bold);">{{ stats.orders_today|default(0) }}</div>
+    </div>
+    <div class="cc-card cc-card-body">
+        <div class="cc-text-muted cc-text-sm">Выручка сегодня</div>
+        <div style="font-size:var(--cc-font-size-3xl);font-weight:var(--cc-font-weight-bold);">{{ stats.revenue_today|default('0.00') }} ₽</div>
+    </div>
+    <div class="cc-card cc-card-body">
+        <div class="cc-text-muted cc-text-sm">Новые покупатели</div>
+        <div style="font-size:var(--cc-font-size-3xl);font-weight:var(--cc-font-weight-bold);">{{ stats.customers_today|default(0) }}</div>
+    </div>
+    <div class="cc-card cc-card-body">
+        <div class="cc-text-muted cc-text-sm">Товары с низким остатком</div>
+        <div style="font-size:var(--cc-font-size-3xl);font-weight:var(--cc-font-weight-bold);">{{ stats.low_stock|default(0) }}</div>
+    </div>
+</div>
+
+<h2 class="cc-mb-4">Последние заказы</h2>
+{% if recent_orders is defined and recent_orders|length > 0 %}
+<table class="cc-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Покупатель</th>
+            <th>Статус</th>
+            <th>Итого</th>
+            <th>Дата</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in recent_orders %}
+        <tr>
+            <td>#{{ order.id }}</td>
+            <td>{{ order.customer_name|default('Гость') }}</td>
+            <td><span class="cc-badge cc-badge-info">{{ order.status_label }}</span></td>
+            <td>{{ order.total }} ₽</td>
+            <td>{{ order.date_added }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    {% include '@admin/common/empty-state.html.twig' with {
+        title: 'Заказов пока нет',
+        message: 'Заказы появятся здесь, когда покупатели начнут оформлять покупки.'
+    } %}
+{% endif %}
+{% endblock %}

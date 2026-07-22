@@ -1,0 +1,84 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}CoreCart — Интернет-магазин{% endblock %}
+
+{% block content %}
+<section class="cc-mb-8">
+    <div class="cc-card cc-p-4" style="background:var(--cc-color-surface);display:flex;align-items:center;gap:var(--cc-space-8);">
+        <div style="flex:1;">
+            <h1 style="margin-bottom:var(--cc-space-2);">Простые покупки без лишних действий</h1>
+            <p class="cc-text-muted" style="font-size:var(--cc-font-size-lg);">Найдите товар, добавьте в корзину и оформите заказ.</p>
+            <a href="/catalog" class="cc-btn cc-btn-primary">Перейти в каталог</a>
+        </div>
+    </div>
+</section>
+
+{% if categories is defined and categories|length > 0 %}
+<section class="cc-mb-8">
+    <h2 class="cc-mb-4">Популярные категории</h2>
+    <div class="cc-grid cc-grid-4">
+        {% for category in categories %}
+        <a href="/category/{{ category.id }}" class="cc-product-card" style="text-decoration:none;">
+            <div class="cc-product-card-image" style="aspect-ratio:4/3;">
+                {% if category.image %}
+                    <img src="{{ category.image }}" alt="{{ category.name }}">
+                {% else %}
+                    <span class="cc-text-muted">{{ category.name }}</span>
+                {% endif %}
+            </div>
+            <div class="cc-product-card-body">
+                <div class="cc-product-card-name">{{ category.name }}</div>
+                {% if category.product_count is defined %}
+                    <div class="cc-text-xs cc-text-muted">{{ category.product_count }} товара</div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if products is defined and products|length > 0 %}
+<section class="cc-mb-8">
+    <h2 class="cc-mb-4">Рекомендуемые товары</h2>
+    <div class="cc-grid cc-grid-4">
+        {% for product in products %}
+        <a href="/product/{{ product.id }}" class="cc-product-card" style="text-decoration:none;">
+            <div class="cc-product-card-image">
+                {% if product.image %}
+                    <img src="{{ product.image }}" alt="{{ product.name }}">
+                {% endif %}
+            </div>
+            <div class="cc-product-card-body">
+                <div class="cc-product-card-name">{{ product.name }}</div>
+                <div class="cc-product-card-price">{{ product.price }} ₽</div>
+                {% if product.stock_status is defined %}
+                    <span class="cc-badge cc-badge-success">В наличии</span>
+                {% endif %}
+                <form method="post" action="/cart/add" style="margin-top:var(--cc-space-2);">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">В корзину</button>
+                </form>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="cc-mb-8">
+    <div class="cc-grid cc-grid-3">
+        <div class="cc-card cc-card-body cc-text-center">
+            <strong>Безопасное оформление</strong>
+        </div>
+        <div class="cc-card cc-card-body cc-text-center">
+            <strong>Понятная доставка</strong>
+        </div>
+        <div class="cc-card cc-card-body cc-text-center">
+            <strong>Поддержка покупателей</strong>
+        </div>
+    </div>
+</section>
+{% endblock %}

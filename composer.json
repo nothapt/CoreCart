@@ -12,6 +12,7 @@
             "CoreCart\\System\\Dto\\": "system/dto/",
             "CoreCart\\System\\Infrastructure\\": "system/infrastructure/",
             "CoreCart\\System\\Route\\": "system/route/",
+            "CoreCart\\System\\View\\": "system/view/",
             "CoreCart\\Admin\\Controller\\": "admin/Controller/",
             "CoreCart\\Catalog\\Controller\\": "catalog/Controller/",
             "CoreCart\\Cart\\Controller\\": "cart/Controller/",

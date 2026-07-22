@@ -1,0 +1,12 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}Ошибка сервера — CoreCart{% endblock %}
+
+{% block content %}
+<div class="cc-empty">
+    <div class="cc-empty-title" style="font-size:var(--cc-font-size-4xl);">500</div>
+    <h2>Ошибка сервера</h2>
+    <p>Произошла непредвиденная ошибка. Попробуйте вернуться позже.</p>
+    <a href="/" class="cc-btn cc-btn-primary">На главную</a>
+</div>
+{% endblock %}

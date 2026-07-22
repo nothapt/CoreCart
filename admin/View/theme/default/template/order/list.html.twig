@@ -1,0 +1,52 @@
+{% extends '@admin/layout/base.html.twig' %}
+{% block title %}Заказы — CoreCart Admin{% endblock %}
+{% block content %}
+<div class="cc-page-header">
+    <div>
+        <h1>Заказы</h1>
+        <p>Управление заказами магазина.</p>
+    </div>
+</div>
+
+{% if orders is defined and orders|length > 0 %}
+<table class="cc-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Покупатель</th>
+            <th>Email</th>
+            <th>Статус</th>
+            <th>Итого</th>
+            <th>Дата</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>#{{ order.id }}</td>
+            <td>{{ order.customer_name|default('Гость') }}</td>
+            <td>{{ order.email|default('—') }}</td>
+            <td>
+                {% set badge_class = 'cc-badge-neutral' %}
+                {% if order.status == 1 %}{% set badge_class = 'cc-badge-info' %}
+                {% elseif order.status == 2 %}{% set badge_class = 'cc-badge-info' %}
+                {% elseif order.status == 3 %}{% set badge_class = 'cc-badge-success' %}
+                {% elseif order.status == 9 %}{% set badge_class = 'cc-badge-danger' %}
+                {% endif %}
+                <span class="cc-badge {{ badge_class }}">{{ order.status_label }}</span>
+            </td>
+            <td>{{ order.total }} ₽</td>
+            <td>{{ order.date_added }}</td>
+            <td><a href="/admin/order/view?id={{ order.id }}" class="cc-btn cc-btn-secondary">Просмотр</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    {% include '@admin/common/empty-state.html.twig' with {
+        title: 'Заказов нет',
+        message: 'Заказы появятся здесь, когда покупатели начнут оформлять покупки.'
+    } %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}Корзина — CoreCart{% endblock %}
+
+{% block content %}
+<h1 class="cc-mb-4">Корзина</h1>
+
+{% if items is defined and items|length > 0 %}
+<div style="display:grid;grid-template-columns:1fr 320px;gap:var(--cc-space-8);">
+    <div>
+        {% for item in items %}
+        <div class="cc-card cc-card-body cc-mb-2" style="display:flex;gap:var(--cc-space-4);align-items:center;">
+            <div style="width:80px;height:80px;background:var(--cc-color-background);border-radius:var(--cc-radius-sm);flex-shrink:0;"></div>
+            <div style="flex:1;">
+                <div style="font-weight:var(--cc-font-weight-medium);">{{ item.name }}</div>
+                <div class="cc-text-muted cc-text-sm">{{ item.price }} ₽</div>
+            </div>
+            <form method="post" action="/cart/update" style="display:flex;align-items:center;gap:var(--cc-space-2);">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+                <input type="hidden" name="cart_id" value="{{ item.cart_id }}">
+                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="cc-input" style="width:70px;">
+                <button type="submit" class="cc-btn cc-btn-secondary">Обновить</button>
+            </form>
+            <div style="font-weight:var(--cc-font-weight-bold);white-space:nowrap;">{{ item.total }} ₽</div>
+            <form method="post" action="/cart/remove">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+                <input type="hidden" name="cart_id" value="{{ item.cart_id }}">
+                <button type="submit" class="cc-btn cc-btn-link cc-text-muted">Удалить</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    <div>
+        <div class="cc-card cc-card-body">
+            <h3 class="cc-mb-4">Итог</h3>
+            <div class="cc-flex cc-justify-between cc-mb-2">
+                <span class="cc-text-muted">Товары:</span>
+                <span>{{ total }} ₽</span>
+            </div>
+            <div class="cc-flex cc-justify-between cc-mb-4">
+                <span class="cc-text-muted">Доставка:</span>
+                <span>—</span>
+            </div>
+            <hr>
+            <div class="cc-flex cc-justify-between cc-mb-4">
+                <strong>Итого:</strong>
+                <strong>{{ total }} ₽</strong>
+            </div>
+            <a href="/checkout" class="cc-btn cc-btn-primary cc-btn-block">Оформить заказ</a>
+            <a href="/catalog" class="cc-btn cc-btn-secondary cc-btn-block cc-mt-2">Продолжить покупки</a>
+        </div>
+    </div>
+</div>
+{% else %}
+    {% include '@storefront/common/empty-state.html.twig' with {
+        title: 'Корзина пуста',
+        message: 'Добавьте товары из каталога, чтобы оформить заказ.',
+        action_url: '/catalog',
+        action_text: 'Перейти в каталог'
+    } %}
+{% endif %}
+{% endblock %}

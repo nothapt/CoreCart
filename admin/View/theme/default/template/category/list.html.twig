@@ -1,0 +1,42 @@
+{% extends '@admin/layout/base.html.twig' %}
+{% block title %}Категории — CoreCart Admin{% endblock %}
+{% block content %}
+<div class="cc-page-header">
+    <div>
+        <h1>Категории</h1>
+        <p>Управление категориями каталога.</p>
+    </div>
+    <a href="/admin/category/create" class="cc-btn cc-btn-primary">Добавить категорию</a>
+</div>
+
+{% if categories is defined and categories|length > 0 %}
+<table class="cc-table">
+    <thead>
+        <tr><th>ID</th><th>Название</th><th>Статус</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for category in categories %}
+        <tr>
+            <td>{{ category.id }}</td>
+            <td>{{ category.name }}</td>
+            <td>
+                {% if category.status == 1 %}
+                    <span class="cc-badge cc-badge-success">Включена</span>
+                {% else %}
+                    <span class="cc-badge cc-badge-neutral">Выключена</span>
+                {% endif %}
+            </td>
+            <td><a href="/admin/category/edit?id={{ category.id }}" class="cc-btn cc-btn-secondary">Редактировать</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    {% include '@admin/common/empty-state.html.twig' with {
+        title: 'Категорий нет',
+        message: 'Добавьте первую категорию, чтобы структурировать каталог.',
+        action_url: '/admin/category/create',
+        action_text: 'Добавить категорию'
+    } %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}Регистрация — CoreCart{% endblock %}
+
+{% block content %}
+<div style="max-width:400px;margin:var(--cc-space-8) auto;">
+    <div class="cc-card cc-card-body">
+        <h1 class="cc-mb-4 cc-text-center">Регистрация</h1>
+        <form method="post" action="/account/register">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+
+            <div class="cc-field">
+                <label class="cc-label" for="firstname">Имя</label>
+                <input type="text" id="firstname" name="firstname" class="cc-input" required>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="lastname">Фамилия</label>
+                <input type="text" id="lastname" name="lastname" class="cc-input" required>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="email">Email</label>
+                <input type="email" id="email" name="email" class="cc-input" required>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="password">Пароль</label>
+                <input type="password" id="password" name="password" class="cc-input" required minlength="6">
+            </div>
+
+            <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">Зарегистрироваться</button>
+        </form>
+        <p class="cc-text-center cc-mt-4 cc-text-sm">
+            Уже есть аккаунт? <a href="/account/login">Войти</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+/* CoreCart Admin Design Tokens */
+:root {
+    --cc-admin-sidebar: #172033;
+    --cc-admin-sidebar-hover: #222d43;
+    --cc-admin-sidebar-active: #2d3a55;
+    --cc-admin-sidebar-text: #d0d5dd;
+    --cc-admin-sidebar-text-active: #ffffff;
+    --cc-admin-sidebar-width: 240px;
+    --cc-admin-sidebar-collapsed: 72px;
+    --cc-admin-topbar-height: 56px;
+
+    --cc-color-primary: #2563eb;
+    --cc-color-primary-hover: #1d4ed8;
+    --cc-color-primary-focus: rgba(37, 99, 235, 0.15);
+    --cc-color-text: #172033;
+    --cc-color-text-muted: #667085;
+    --cc-color-text-inverse: #ffffff;
+    --cc-color-background: #f6f7f9;
+    --cc-color-surface: #ffffff;
+    --cc-color-border: #e4e7ec;
+    --cc-color-success: #15803d;
+    --cc-color-warning: #b45309;
+    --cc-color-danger: #b42318;
+    --cc-color-info: #0369a1;
+
+    --cc-font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --cc-font-size-xs: 0.75rem;
+    --cc-font-size-sm: 0.875rem;
+    --cc-font-size-base: 1rem;
+    --cc-font-size-lg: 1.125rem;
+    --cc-font-size-xl: 1.25rem;
+    --cc-font-size-2xl: 1.5rem;
+    --cc-font-size-3xl: 1.875rem;
+    --cc-font-size-4xl: 2rem;
+    --cc-line-height-tight: 1.25;
+    --cc-line-height-normal: 1.5;
+    --cc-font-weight-normal: 400;
+    --cc-font-weight-medium: 500;
+    --cc-font-weight-semibold: 600;
+    --cc-font-weight-bold: 700;
+
+    --cc-space-1: 0.25rem;
+    --cc-space-2: 0.5rem;
+    --cc-space-3: 0.75rem;
+    --cc-space-4: 1rem;
+    --cc-space-6: 1.5rem;
+    --cc-space-8: 2rem;
+    --cc-radius-sm: 6px;
+    --cc-radius-md: 8px;
+    --cc-radius-full: 999px;
+    --cc-shadow-sm: 0 1px 2px rgb(16 24 40 / 5%), 0 1px 3px rgb(16 24 40 / 8%);
+    --cc-transition-fast: 120ms ease;
+}

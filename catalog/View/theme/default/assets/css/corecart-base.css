@@ -1,0 +1,62 @@
+/* CoreCart Base Styles */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--cc-font-family);
+    font-size: var(--cc-font-size-base);
+    line-height: var(--cc-line-height-normal);
+    color: var(--cc-color-text);
+    background-color: var(--cc-color-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    color: var(--cc-color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--cc-color-primary-hover);
+    text-decoration: underline;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    color: var(--cc-color-text);
+    line-height: var(--cc-line-height-tight);
+    font-weight: var(--cc-font-weight-semibold);
+}
+
+h1 { font-size: var(--cc-font-size-4xl); }
+h2 { font-size: var(--cc-font-size-3xl); }
+h3 { font-size: var(--cc-font-size-2xl); }
+h4 { font-size: var(--cc-font-size-xl); }
+h5 { font-size: var(--cc-font-size-lg); }
+h6 { font-size: var(--cc-font-size-base); }
+
+p { margin-top: 0; margin-bottom: var(--cc-space-4); }
+
+/* Focus */
+:focus-visible {
+    outline: 2px solid var(--cc-color-primary);
+    outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

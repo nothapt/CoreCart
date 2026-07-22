@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CoreCart{% endblock %}</title>
+    <link rel="stylesheet" href="{{ assets.css('corecart-tokens.css') }}">
+    <link rel="stylesheet" href="{{ assets.css('corecart-base.css') }}">
+    <link rel="stylesheet" href="{{ assets.css('corecart-components.css') }}">
+    <link rel="stylesheet" href="{{ assets.css('corecart-layout.css') }}">
+    <link rel="stylesheet" href="{{ assets.css('corecart-pages.css') }}">
+    <link rel="stylesheet" href="{{ assets.css('corecart-responsive.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% include '@storefront/common/header.html.twig' %}
+
+    <main class="cc-container cc-py-4">
+        {% include '@storefront/common/flash.html.twig' %}
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include '@storefront/common/footer.html.twig' %}
+
+    {% block javascript %}{% endblock %}
+</body>
+</html>

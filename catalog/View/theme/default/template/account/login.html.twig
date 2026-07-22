@@ -1,0 +1,29 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}Вход — CoreCart{% endblock %}
+
+{% block content %}
+<div style="max-width:400px;margin:var(--cc-space-8) auto;">
+    <div class="cc-card cc-card-body">
+        <h1 class="cc-mb-4 cc-text-center">Вход</h1>
+        <form method="post" action="/account/login">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+
+            <div class="cc-field">
+                <label class="cc-label" for="email">Email</label>
+                <input type="email" id="email" name="email" class="cc-input" required autofocus>
+            </div>
+
+            <div class="cc-field">
+                <label class="cc-label" for="password">Пароль</label>
+                <input type="password" id="password" name="password" class="cc-input" required>
+            </div>
+
+            <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">Войти</button>
+        </form>
+        <p class="cc-text-center cc-mt-4 cc-text-sm">
+            Нет аккаунта? <a href="/account/register">Зарегистрироваться</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

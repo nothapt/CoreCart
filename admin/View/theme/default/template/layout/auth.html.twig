@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Вход — CoreCart Admin{% endblock %}</title>
+    <link rel="stylesheet" href="{{ assets.css('admin-tokens.css') }}">
+    <link rel="stylesheet" href="{{ assets.css('admin-base.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="cc-admin-auth">
+    <div class="cc-admin-auth-wrapper">
+        {% include '@admin/common/flash.html.twig' %}
+        {% block content %}{% endblock %}
+        <p class="cc-text-center cc-mt-4 cc-text-sm">
+            <a href="/" class="cc-footer-link">Вернуться в магазин</a>
+        </p>
+    </div>
+</body>
+</html>

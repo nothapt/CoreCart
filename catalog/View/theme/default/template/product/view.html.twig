@@ -1,0 +1,45 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}{{ product.name }} — CoreCart{% endblock %}
+
+{% block content %}
+{% include '@storefront/common/breadcrumbs.html.twig' %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--cc-space-8);">
+    <div>
+        <div class="cc-product-card-image" style="aspect-ratio:1;border-radius:var(--cc-radius-md);">
+            {% if product.image %}
+                <img src="{{ product.image }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
+            {% endif %}
+        </div>
+    </div>
+    <div>
+        <h1 style="margin-bottom:var(--cc-space-2);">{{ product.name }}</h1>
+        <div style="font-size:var(--cc-font-size-3xl);font-weight:var(--cc-font-weight-bold);margin-bottom:var(--cc-space-2);">
+            {{ product.price }} ₽
+        </div>
+        {% if product.stock_status is defined %}
+            <span class="cc-badge cc-badge-success" style="margin-bottom:var(--cc-space-4);display:inline-block;">В наличии</span>
+        {% endif %}
+
+        <form method="post" action="/cart/add" style="margin-top:var(--cc-space-4);">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <div class="cc-field">
+                <label class="cc-label" for="quantity">Количество</label>
+                <input type="number" id="quantity" name="quantity" value="1" min="1" class="cc-input" style="width:120px;">
+            </div>
+            <button type="submit" class="cc-btn cc-btn-primary" style="font-size:var(--cc-font-size-lg);padding:var(--cc-space-3) var(--cc-space-8);">
+                Добавить в корзину
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if product.description is defined and product.description %}
+<div class="cc-mt-8">
+    <h2>Описание</h2>
+    <div>{{ product.description|raw }}</div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+<header class="cc-admin-topbar">
+    <div class="cc-admin-topbar-left">
+        <span class="cc-text-sm cc-text-muted">{{ shop_name|default('CoreCart') }}</span>
+    </div>
+    <div class="cc-admin-topbar-right">
+        <a href="/" target="_blank" class="cc-header-link cc-text-sm">Открыть магазин</a>
+        {% if app.user is defined and app.user %}
+            <span class="cc-text-sm">{{ app.user.username|default('Admin') }}</span>
+        {% endif %}
+        <form method="post" action="/admin/auth/logout" style="display:inline;">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
+            <button type="submit" class="cc-btn cc-btn-link cc-text-sm">Выход</button>
+        </form>
+    </div>
+</header>
