@@ -13,7 +13,16 @@ class TwigRenderer implements TemplateRendererInterface
     public function __construct(ThemeResolver $theme, AssetResolver $assets, bool $debug = false)
     {
         $loader = new FilesystemLoader();
-        $loader->addPath($theme->getTemplateDir(), $theme->getTwigNamespace());
+
+        $templateDir = $theme->getTemplateDir();
+
+        // __main__ namespace: templates referenced without @ prefix
+        // e.g. extends 'layout/base.html.twig'
+        $loader->addPath($templateDir);
+
+        // Named namespace: templates referenced with @ prefix
+        // e.g. extends '@storefront/layout/base.html.twig'
+        $loader->addPath($templateDir, $theme->getTwigNamespace());
 
         $this->twig = new Environment($loader, [
             'autoescape'       => 'html',
