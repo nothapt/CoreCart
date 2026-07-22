@@ -77,14 +77,7 @@ $GLOBALS['corecart_container'] = $container;
 
 // Infrastructure
 $container->set(\CoreCart\System\Infrastructure\SessionInterface::class, fn() => new \CoreCart\System\Infrastructure\Session('CCSESSID_ADMIN'));
-$container->set(\CoreCart\System\Engine\Database::class, function () {
-    return new \CoreCart\System\Engine\Database(
-        $_ENV['DB_HOST'] ?? 'localhost',
-        $_ENV['DB_NAME'] ?? 'corecart',
-        $_ENV['DB_USER'] ?? 'root',
-        $_ENV['DB_PASS'] ?? ''
-    );
-});
+$container->set(\CoreCart\System\Engine\Database::class, static fn() => new \CoreCart\System\Engine\Database());
 
 // Repositories
 $container->set(\CoreCart\System\Repository\ProductRepository::class, fn($c) => new \CoreCart\System\Repository\ProductRepository($c->get(\CoreCart\System\Engine\Database::class)));

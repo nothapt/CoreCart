@@ -23,11 +23,11 @@ class Database
         ?string $pass = null,
         ?int $port = null,
     ) {
-        $host = $host ?? $_ENV['DB_HOST'] ?? 'localhost';
-        $name = $name ?? $_ENV['DB_NAME'] ?? 'corecart';
-        $user = $user ?? $_ENV['DB_USER'] ?? 'root';
-        $pass = $pass ?? $_ENV['DB_PASS'] ?? '';
-        $port = $port ?? (int) ($_ENV['DB_PORT'] ?? 3306);
+        $host ??= self::env('DB_HOST', 'localhost');
+        $name ??= self::env('DB_NAME', 'corecart');
+        $user ??= self::env('DB_USER', 'root');
+        $pass ??= self::env('DB_PASS', '');
+        $port ??= (int) self::env('DB_PORT', '3306');
 
         $dsn = sprintf(
             'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
@@ -43,6 +43,19 @@ class Database
         ];
 
         $this->pdo = new \PDO($dsn, $user, $pass, $options);
+    }
+
+    private static function env(string $name, string $default): string
+    {
+        $value = getenv($name);
+
+        if ($value !== false) {
+            return $value;
+        }
+
+        return isset($_ENV[$name])
+            ? (string) $_ENV[$name]
+            : $default;
     }
 
     /**
