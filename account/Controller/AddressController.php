@@ -4,76 +4,86 @@ declare(strict_types=1);
 namespace CoreCart\Account\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\HtmlResponse;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
+use CoreCart\System\Infrastructure\SessionInterface;
 use CoreCart\System\Dto\AddressDTO;
 
 class AddressController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function index(Request $request): Response
     {
         $customerId = $request->getUserId();
         if (!$customerId) {
-            return JsonResponse::error('Not logged in', 401);
+            return new RedirectResponse('/account/login');
         }
 
         $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
         $addresses = $customerService->getAddresses($customerId);
 
-        return JsonResponse::success(array_map(fn($a) => $a->toArray(), $addresses));
+        $context = $this->container->get(\CoreCart\System\View\StorefrontContextProvider::class);
+        $data = $context->build($request);
+        $data['addresses'] = $addresses;
+
+        $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('account/profile', $data));
     }
 
     public function create(Request $request): Response
     {
         $customerId = $request->getUserId();
         if (!$customerId) {
-            return JsonResponse::error('Not logged in', 401);
+            return new RedirectResponse('/account/login');
         }
 
         if ($request->isGet()) {
-            return new JsonResponse(['message' => 'Address form']);
+            $context = $this->container->get(\CoreCart\System\View\StorefrontContextProvider::class);
+            $data = $context->build($request);
+            $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
+            return new HtmlResponse($renderer->render('account/profile', $data));
         }
 
         $dto = AddressDTO::fromArray($request->getBody());
 
         try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-            $id = $customerService->addAddress($customerId, $dto);
-            return JsonResponse::success(['address_id' => $id], 'Address created', 201);
+            $customerService->addAddress($customerId, $dto);
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Address created');
         } catch (\InvalidArgumentException $e) {
-            return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/account/profile');
     }
 
     public function edit(Request $request): Response
     {
         $customerId = $request->getUserId();
         if (!$customerId) {
-            return JsonResponse::error('Not logged in', 401);
+            return new RedirectResponse('/account/login');
         }
 
         $addressId = (int) $request->getQueryParam('id', 0);
         if ($addressId <= 0) {
-            return JsonResponse::error('Invalid address ID', 400);
+            return new RedirectResponse('/account/profile');
         }
 
         if ($request->isGet()) {
-            $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
-            $addresses = $customerService->getAddresses($customerId);
-            foreach ($addresses as $addr) {
-                if ($addr->id === $addressId) {
-                    return JsonResponse::success($addr->toArray());
-                }
-            }
-            return JsonResponse::error('Address not found', 404);
+            $context = $this->container->get(\CoreCart\System\View\StorefrontContextProvider::class);
+            $data = $context->build($request);
+            $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
+            return new HtmlResponse($renderer->render('account/profile', $data));
         }
 
         $dto = AddressDTO::fromArray($request->getBody());
@@ -81,30 +91,44 @@ class AddressController
         try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
             $customerService->updateAddress($customerId, $addressId, $dto);
-            return JsonResponse::success(null, 'Address updated');
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Address updated');
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 404);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/account/profile');
     }
 
     public function delete(Request $request): Response
     {
         $customerId = $request->getUserId();
         if (!$customerId) {
-            return JsonResponse::error('Not logged in', 401);
+            return new RedirectResponse('/account/login');
         }
 
-        $addressId = (int) $request->getInput('address_id', $request->getQueryParam('id', 0));
+        $addressId = (int) $request->getInput('address_id', 0);
         if ($addressId <= 0) {
-            return JsonResponse::error('Invalid address ID', 400);
+            return new RedirectResponse('/account/profile');
         }
 
         try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
             $customerService->deleteAddress($customerId, $addressId);
-            return JsonResponse::success(null, 'Address deleted');
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Address deleted');
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 404);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/account/profile');
     }
 }

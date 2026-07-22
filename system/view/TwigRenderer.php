@@ -12,8 +12,8 @@ class TwigRenderer implements TemplateRendererInterface
 
     public function __construct(ThemeResolver $theme, AssetResolver $assets, bool $debug = false)
     {
-
-        $loader = new FilesystemLoader($theme->getTemplateDir());
+        $loader = new FilesystemLoader();
+        $loader->addPath($theme->getTemplateDir(), $theme->getTwigNamespace());
 
         $this->twig = new Environment($loader, [
             'autoescape'       => 'html',
@@ -26,8 +26,8 @@ class TwigRenderer implements TemplateRendererInterface
             $this->twig->addExtension(new \Twig\Extension\DebugExtension());
         }
 
-        $this->addGlobal('assets', $assets);
-        $this->addGlobal('theme', $theme);
+        $this->twig->addGlobal('assets', $assets);
+        $this->twig->addGlobal('theme', $theme);
     }
 
     public function render(string $template, array $context = []): string

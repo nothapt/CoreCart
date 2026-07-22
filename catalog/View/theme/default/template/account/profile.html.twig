@@ -1,25 +1,25 @@
 {% extends '@storefront/layout/base.html.twig' %}
 
-{% block title %}Профиль — CoreCart{% endblock %}
+{% block title %}Profile — CoreCart{% endblock %}
 
 {% block content %}
-<h1 class="cc-mb-4">Профиль</h1>
-<div class="cc-card cc-card-body" style="max-width:600px;">
+<h1 class="cc-mb-4">Profile</h1>
+<div class="cc-card cc-card-body cc-form-narrow">
     <form method="post" action="/account/profile">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
         <div class="cc-field">
-            <label class="cc-label" for="firstname">Имя</label>
+            <label class="cc-label" for="firstname">First name</label>
             <input type="text" id="firstname" name="firstname" class="cc-input" value="{{ customer.firstname|default('') }}">
         </div>
         <div class="cc-field">
-            <label class="cc-label" for="lastname">Фамилия</label>
+            <label class="cc-label" for="lastname">Last name</label>
             <input type="text" id="lastname" name="lastname" class="cc-input" value="{{ customer.lastname|default('') }}">
         </div>
         <div class="cc-field">
             <label class="cc-label" for="email">Email</label>
             <input type="email" id="email" name="email" class="cc-input" value="{{ customer.email|default('') }}">
         </div>
-        <button type="submit" class="cc-btn cc-btn-primary">Сохранить</button>
+        <button type="submit" class="cc-btn cc-btn-primary">Save</button>
     </form>
 </div>
 {% endblock %}

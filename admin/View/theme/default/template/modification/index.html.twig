@@ -1,16 +1,16 @@
 {% extends '@admin/layout/base.html.twig' %}
-{% block title %}Модификации — CoreCart Admin{% endblock %}
+{% block title %}Modifications — CoreCart Admin{% endblock %}
 {% block content %}
 <div class="cc-page-header">
     <div>
-        <h1>Модификации</h1>
-        <p>Управление OCMOD-модификациями.</p>
+        <h1>Modifications</h1>
+        <p>Manage OCMOD modifications.</p>
     </div>
 </div>
 <div class="cc-card cc-card-body">
     {% include '@admin/common/empty-state.html.twig' with {
-        title: 'Модификаций нет',
-        message: 'Установленные модификации появятся здесь.'
+        title: 'No modifications',
+        message: 'Installed modifications will appear here.'
     } %}
 </div>
 {% endblock %}

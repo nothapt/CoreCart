@@ -4,46 +4,58 @@ declare(strict_types=1);
 namespace CoreCart\Account\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\HtmlResponse;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
 use CoreCart\System\Infrastructure\SessionInterface;
 use CoreCart\System\Dto\RegisterDTO;
+use CoreCart\System\View\StorefrontContextProvider;
+use CoreCart\System\View\TemplateRendererInterface;
 
 class AuthController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function login(Request $request): Response
     {
-        if ($request->isGet()) {
-            return new JsonResponse(['message' => 'Login form']);
+        if ($request->isLoggedIn()) {
+            return new RedirectResponse('/account/profile');
         }
 
+        $context = $this->container->get(StorefrontContextProvider::class);
+        $data = $context->build($request);
+
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('account/login', $data));
+    }
+
+    public function loginPost(Request $request): Response
+    {
         $email = trim($request->getInput('email', ''));
         $password = $request->getInput('password', '');
 
         if ($email === '' || $password === '') {
-            return JsonResponse::error('Email and password are required', 422);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', 'Email and password are required');
+            return new RedirectResponse('/account/login');
         }
 
-        // Rate limiting for customer login
         $rateLimiter = $this->container->get(\CoreCart\System\Engine\RateLimiter::class);
         $ipAddress = $request->getIpAddress();
         if ($rateLimiter->isLimited($ipAddress, $email)) {
             $remaining = $rateLimiter->getRemainingSeconds($ipAddress);
-            return JsonResponse::error("Too many login attempts. Try again in {$remaining} seconds", 429);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', "Too many login attempts. Try again in {$remaining} seconds");
+            return new RedirectResponse('/account/login');
         }
 
         /** @var SessionInterface $session */
         $session = $this->container->get(SessionInterface::class);
-
-        // Save guest session ID BEFORE login (before regenerate)
         $guestSessionId = $session->getId();
 
         $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
@@ -51,45 +63,46 @@ class AuthController
 
         if (!$user) {
             $rateLimiter->recordFailure($ipAddress, $email);
-            return JsonResponse::error('Invalid credentials', 401);
+            $session->set('flash_error', 'Invalid credentials');
+            return new RedirectResponse('/account/login');
         }
 
         $rateLimiter->recordSuccess($ipAddress, $email);
-
-        // Regenerate session to prevent fixation
         $session->regenerate();
 
         $session->set('customer_id', (int) $user['customer_id']);
         $session->set('customer_username', $user['username']);
         $session->set('customer_email', $user['email']);
 
-        // Merge guest cart using the OLD session ID (before regenerate)
         $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);
         $cartService->mergeGuestToCustomer($guestSessionId, (int) $user['customer_id']);
 
-        return JsonResponse::success([
-            'id'       => (int) $user['customer_id'],
-            'username' => $user['username'],
-            'email'    => $user['email'],
-        ], 'Login successful');
+        return new RedirectResponse('/account/profile');
     }
 
     public function register(Request $request): Response
     {
-        if ($request->isGet()) {
-            return new JsonResponse(['message' => 'Register form']);
+        if ($request->isLoggedIn()) {
+            return new RedirectResponse('/account/profile');
         }
 
+        $context = $this->container->get(StorefrontContextProvider::class);
+        $data = $context->build($request);
+
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('account/register', $data));
+    }
+
+    public function registerPost(Request $request): Response
+    {
         $dto = RegisterDTO::fromArray($request->getBody());
 
-try {
+        try {
             $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
             $id = $customerService->register($dto);
 
             /** @var SessionInterface $session */
             $session = $this->container->get(SessionInterface::class);
-
-            // Save guest session ID BEFORE regeneration
             $guestSessionId = $session->getId();
 
             $session->regenerate();
@@ -98,15 +111,20 @@ try {
             $session->set('customer_username', $dto->username);
             $session->set('customer_email', $dto->email);
 
-            // Merge guest cart using the OLD session ID
             $cartService = $this->container->get(\CoreCart\System\Service\CartService::class);
             $cartService->mergeGuestToCustomer($guestSessionId, $id);
 
-            return JsonResponse::success(['customer_id' => $id], 'Registration successful', 201);
+            return new RedirectResponse('/account/profile');
         } catch (\InvalidArgumentException $e) {
-            return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
+            return new RedirectResponse('/account/register');
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 409);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
+            return new RedirectResponse('/account/register');
         }
     }
 
@@ -116,6 +134,6 @@ try {
         $session = $this->container->get(SessionInterface::class);
         $session->invalidate();
 
-        return JsonResponse::success(null, 'Logged out');
+        return new RedirectResponse('/');
     }
 }

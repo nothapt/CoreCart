@@ -99,12 +99,12 @@ $container->set(\CoreCart\System\Service\DashboardService::class, fn($c) => new 
 $container->set(\CoreCart\System\Service\SettingService::class, fn($c) => new \CoreCart\System\Service\SettingService($c->get(\CoreCart\System\Repository\SettingRepository::class)));
 
 // View (Twig)
-$container->set(\CoreCart\System\View\ThemeResolver::class, fn() => new \CoreCart\System\View\ThemeResolver('admin', 'default'));
-$container->set(\CoreCart\System\View\AssetResolver::class, fn($c) => new \CoreCart\System\View\AssetResolver($c->get(\CoreCart\System\View\ThemeResolver::class)));
-$container->set(\CoreCart\System\View\TwigRenderer::class, fn($c) => new \CoreCart\System\View\TwigRenderer(
+$container->set(\CoreCart\System\View\ThemeResolver::class, static fn() => new \CoreCart\System\View\ThemeResolver('admin', 'default'));
+$container->set(\CoreCart\System\View\AssetResolver::class, static fn($c) => new \CoreCart\System\View\AssetResolver($c->get(\CoreCart\System\View\ThemeResolver::class)));
+$container->set(\CoreCart\System\View\TemplateRendererInterface::class, static fn($c) => new \CoreCart\System\View\TwigRenderer(
     $c->get(\CoreCart\System\View\ThemeResolver::class),
     $c->get(\CoreCart\System\View\AssetResolver::class),
-    ($_ENV['APP_DEBUG'] ?? 'false') === 'true',
+    filter_var(getenv('APP_DEBUG') ?: ($_ENV['APP_DEBUG'] ?? 'false'), FILTER_VALIDATE_BOOL),
 ));
 
 // Middleware & Auth

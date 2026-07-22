@@ -1,0 +1,39 @@
+/* CoreCart Responsive Overrides */
+
+/* Mobile header */
+@media (max-width: 575px) {
+    .cc-header-inner {
+        flex-wrap: wrap;
+    }
+
+    .cc-logo {
+        font-size: var(--cc-font-size-lg);
+    }
+
+    .cc-search-mobile {
+        width: 100%;
+        order: 3;
+    }
+}
+
+/* Product grid responsive */
+@media (max-width: 575px) {
+    .cc-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--cc-space-2);
+    }
+}
+
+/* Cart items mobile */
+@media (max-width: 575px) {
+    .cc-cart-item {
+        flex-wrap: wrap;
+    }
+}
+
+/* Checkout mobile */
+@media (max-width: 575px) {
+    .cc-checkout-layout {
+        grid-template-columns: 1fr;
+    }
+}

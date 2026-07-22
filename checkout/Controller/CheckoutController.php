@@ -4,20 +4,20 @@ declare(strict_types=1);
 namespace CoreCart\Checkout\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\HtmlResponse;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
-use CoreCart\System\Dto\OrderCreateDTO;
 use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\Dto\OrderCreateDTO;
+use CoreCart\System\View\StorefrontContextProvider;
+use CoreCart\System\View\TemplateRendererInterface;
 
 class CheckoutController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -27,13 +27,24 @@ class CheckoutController
         $cart = $cartService->getCart($sessionId, $customerId);
 
         if (empty($cart['items'])) {
-            return JsonResponse::error('Cart is empty', 400);
+            return new RedirectResponse('/cart');
         }
 
-        return JsonResponse::success([
-            'cart'  => $cart,
-            'total' => $cart['total'],
-        ]);
+        // Pre-fill customer data if logged in
+        $customer = null;
+        if ($customerId) {
+            $customerService = $this->container->get(\CoreCart\System\Service\CustomerService::class);
+            $customer = $customerService->getCustomer($customerId);
+        }
+
+        $context = $this->container->get(StorefrontContextProvider::class);
+        $data = $context->build($request);
+        $data['items'] = $cart['items'] ?? [];
+        $data['total'] = $cart['total'] ?? '0.00';
+        $data['customer'] = $customer;
+
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('checkout/index', $data));
     }
 
     public function confirm(Request $request): Response
@@ -55,24 +66,19 @@ class CheckoutController
                 $orderId = $orderService->createOrder($sessionId, $dto);
             }
 
-            // Store order_id in session for the success page verification
             /** @var SessionInterface $session */
             $session = $this->container->get(SessionInterface::class);
             $session->set('last_order_id', $orderId);
 
-            return JsonResponse::success(
-                ['order_id' => $orderId],
-                'Order placed successfully',
-                201
-            );
+            return new RedirectResponse('/checkout/success?order_id=' . $orderId);
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 400);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
+            return new RedirectResponse('/checkout');
         }
     }
 
-    /**
-     * Success page — verifies the order belongs to the current user/session.
-     */
     public function success(Request $request): Response
     {
         $orderId = (int) $request->getQueryParam('order_id', 0);
@@ -80,34 +86,39 @@ class CheckoutController
         /** @var SessionInterface $session */
         $session = $this->container->get(SessionInterface::class);
 
-        // Verify order belongs to this user
         $lastOrderId = (int) $session->get('last_order_id', 0);
 
         if ($orderId !== $lastOrderId) {
-            return JsonResponse::error('Order not found', 404);
+            return new HtmlResponse('Order not found', 404);
         }
 
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
         $order = $orderService->getOrder($orderId);
 
         if (!$order) {
-            return JsonResponse::error('Order not found', 404);
+            return new HtmlResponse('Order not found', 404);
         }
 
-        // Verify ownership for logged-in users
         $userId = $request->getUserId();
         if ($userId && $order->customerId !== $userId) {
-            return JsonResponse::error('Order not found', 404);
+            return new HtmlResponse('Order not found', 403);
         }
 
-        // Clear the last_order_id to prevent reuse
         $session->remove('last_order_id');
 
-        return JsonResponse::success([
-            'order_id' => $order->id,
-            'total'    => $order->total,
-            'status'   => $order->status,
-        ], 'Order placed successfully');
+        $context = $this->container->get(StorefrontContextProvider::class);
+        $data = $context->build($request);
+        $data['order'] = $order;
+
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('checkout/success', $data));
+    }
+
+    public function csrfToken(Request $request): Response
+    {
+        /** @var \CoreCart\System\Engine\CsrfMiddleware $csrfMiddleware */
+        $csrfMiddleware = $this->container->get(\CoreCart\System\Engine\CsrfMiddleware::class);
+        return new \CoreCart\System\Engine\JsonResponse(['data' => ['csrf_token' => $csrfMiddleware->getToken()]]);
     }
 
     private function getSessionId(): string
@@ -115,12 +126,5 @@ class CheckoutController
         /** @var SessionInterface $session */
         $session = $this->container->get(SessionInterface::class);
         return $session->getId();
-    }
-
-    public function csrfToken(Request $request): Response
-    {
-        /** @var \CoreCart\System\Engine\CsrfMiddleware $csrfMiddleware */
-        $csrfMiddleware = $this->container->get(\CoreCart\System\Engine\CsrfMiddleware::class);
-        return new JsonResponse(['data' => ['csrf_token' => $csrfMiddleware->getToken()]]);
     }
 }

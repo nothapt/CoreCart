@@ -4,56 +4,62 @@ declare(strict_types=1);
 namespace CoreCart\Account\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
 
 class OrderController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function index(Request $request): Response
     {
         $customerId = $request->getUserId();
         if (!$customerId) {
-            return JsonResponse::error('Not logged in', 401);
+            return new RedirectResponse('/account/login');
         }
 
         $page = max(1, (int) $request->getQueryParam('page', 1));
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
         $data = $orderService->getCustomerOrders($customerId, $page);
 
-        return JsonResponse::success($data);
+        $context = $this->container->get(\CoreCart\System\View\StorefrontContextProvider::class);
+        $ctx = $context->build($request);
+        $ctx['orders'] = $data['orders'] ?? [];
+        $ctx['total'] = $data['total'] ?? 0;
+        $ctx['page'] = $data['page'] ?? 1;
+        $ctx['pages'] = $data['pages'] ?? 1;
+
+        $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
+        return new \CoreCart\System\Engine\HtmlResponse($renderer->render('account/profile', $ctx));
     }
 
     public function view(Request $request): Response
     {
         $customerId = $request->getUserId();
         if (!$customerId) {
-            return JsonResponse::error('Not logged in', 401);
+            return new RedirectResponse('/account/login');
         }
 
         $id = (int) $request->getQueryParam('id', 0);
         if ($id <= 0) {
-            return JsonResponse::error('Invalid order ID', 400);
+            return new RedirectResponse('/account/profile');
         }
 
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
         $order = $orderService->getOrder($id);
 
-        if (!$order) {
-            return JsonResponse::error('Order not found', 404);
+        if (!$order || $order->customerId !== $customerId) {
+            return new RedirectResponse('/account/profile');
         }
 
-        if ($order->customerId !== $customerId) {
-            return JsonResponse::error('Access denied', 403);
-        }
+        $context = $this->container->get(\CoreCart\System\View\StorefrontContextProvider::class);
+        $data = $context->build($request);
+        $data['order'] = $order;
 
-        return JsonResponse::success($order->toArray());
+        $renderer = $this->container->get(\CoreCart\System\View\TemplateRendererInterface::class);
+        return new \CoreCart\System\Engine\HtmlResponse($renderer->render('account/profile', $data));
     }
 }

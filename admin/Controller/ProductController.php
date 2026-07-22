@@ -4,18 +4,18 @@ declare(strict_types=1);
 namespace CoreCart\Admin\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\HtmlResponse;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
+use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\View\TemplateRendererInterface;
 
 class ProductController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -23,29 +23,99 @@ class ProductController
         $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
         $data = $catalogService->getAllProducts($page);
 
-        return JsonResponse::success($data);
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        $ctx = [
+            'products'     => $data['products'] ?? [],
+            'total'        => $data['total'] ?? 0,
+            'page'         => $data['page'] ?? 1,
+            'pages'        => $data['pages'] ?? 1,
+            'active_menu'  => 'product',
+            'csrf_token'   => $session->get('csrf_token', ''),
+            'shop_name'    => 'CoreCart',
+        ];
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('product/list', $ctx));
     }
 
     public function create(Request $request): Response
+    {
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        $data = [
+            'product'      => [],
+            'active_menu'  => 'product',
+            'csrf_token'   => $session->get('csrf_token', ''),
+            'shop_name'    => 'CoreCart',
+        ];
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('product/form', $data));
+    }
+
+    public function createPost(Request $request): Response
     {
         $dto = \CoreCart\System\Dto\ProductCreateDTO::fromArray($request->getBody());
 
         try {
             $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
-            $id = $catalogService->createProduct($dto);
-            return JsonResponse::success(['product_id' => $id], 'Product created', 201);
+            $catalogService->createProduct($dto);
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Product created');
         } catch (\InvalidArgumentException $e) {
-            return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 500);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/admin/product/index');
+    }
+
+    public function edit(Request $request): Response
+    {
+        $id = (int) $request->getQueryParam('id', 0);
+        if ($id <= 0) {
+            return new RedirectResponse('/admin/product/index');
+        }
+
+        $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
+        $product = $catalogService->getProduct($id);
+
+        if (!$product) {
+            return new RedirectResponse('/admin/product/index');
+        }
+
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        $data = [
+            'product'      => $product,
+            'active_menu'  => 'product',
+            'csrf_token'   => $session->get('csrf_token', ''),
+            'shop_name'    => 'CoreCart',
+        ];
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('product/form', $data));
     }
 
     public function update(Request $request): Response
     {
-        $id = (int) $request->getInput('product_id', $request->getQueryParam('id', 0));
+        $id = (int) $request->getInput('product_id', 0);
         if ($id <= 0) {
-            return JsonResponse::error('Invalid product ID', 400);
+            return new RedirectResponse('/admin/product/index');
         }
 
         $dto = \CoreCart\System\Dto\ProductUpdateDTO::fromArray($request->getBody());
@@ -53,27 +123,43 @@ class ProductController
         try {
             $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
             $catalogService->updateProduct($id, $dto);
-            return JsonResponse::success(null, 'Product updated');
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Product updated');
         } catch (\InvalidArgumentException $e) {
-            return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 404);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/admin/product/index');
     }
 
     public function delete(Request $request): Response
     {
-        $id = (int) $request->getInput('product_id', $request->getQueryParam('id', 0));
+        $id = (int) $request->getInput('product_id', 0);
         if ($id <= 0) {
-            return JsonResponse::error('Invalid product ID', 400);
+            return new RedirectResponse('/admin/product/index');
         }
 
         try {
             $catalogService = $this->container->get(\CoreCart\System\Service\CatalogService::class);
             $catalogService->deleteProduct($id);
-            return JsonResponse::success(null, 'Product deleted');
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Product deleted');
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 404);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/admin/product/index');
     }
 }

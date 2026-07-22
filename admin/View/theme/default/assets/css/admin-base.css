@@ -66,6 +66,14 @@ p { margin-top: 0; }
 .cc-text-xs { font-size: var(--cc-font-size-xs); }
 .cc-font-bold { font-weight: var(--cc-font-weight-bold); }
 
+/* Admin utilities */
+.cc-form-narrow { max-width: 480px; }
+.cc-d-block { display: block; }
+.cc-nowrap { white-space: nowrap; }
+.cc-btn-lg { min-height: 48px; padding: var(--cc-space-3) var(--cc-space-6); font-size: var(--cc-font-size-base); }
+.cc-footer-link { color: var(--cc-color-text-muted); font-size: var(--cc-font-size-sm); }
+.cc-footer-link:hover { color: var(--cc-color-primary); }
+
 .cc-grid { display: grid; gap: var(--cc-space-4); }
 .cc-grid-2 { grid-template-columns: repeat(2, 1fr); }
 .cc-grid-3 { grid-template-columns: repeat(3, 1fr); }

@@ -1,0 +1,27 @@
+{% extends '@storefront/layout/base.html.twig' %}
+
+{% block title %}Order placed — CoreCart{% endblock %}
+
+{% block content %}
+<div class="cc-empty">
+    <div class="cc-empty-title cc-text-4xl">Order #{{ order.id }}</div>
+    <h2>Thank you for your order!</h2>
+    <p class="cc-text-muted">Your order has been placed successfully.</p>
+    <div class="cc-card cc-card-body cc-mt-4 cc-max-w-sm">
+        <div class="cc-flex cc-justify-between cc-mb-2">
+            <span class="cc-text-muted">Status:</span>
+            <span class="cc-badge cc-badge-info">{{ order.status_label }}</span>
+        </div>
+        <div class="cc-flex cc-justify-between">
+            <span class="cc-text-muted">Total:</span>
+            <strong>{{ order.total }} $</strong>
+        </div>
+    </div>
+    <div class="cc-flex cc-gap-2 cc-mt-4" style="justify-content:center;">
+        <a href="/catalog" class="cc-btn cc-btn-primary">Continue shopping</a>
+        {% if app.user is defined and app.user %}
+            <a href="/account/order" class="cc-btn cc-btn-secondary">My orders</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

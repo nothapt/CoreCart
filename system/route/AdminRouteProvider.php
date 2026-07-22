@@ -77,8 +77,20 @@ class AdminRouteProvider
             'admin/product/create' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
                 'method'     => 'create',
+                'middleware'  => $authenticated,
+                'methods'    => ['GET'],
+            ],
+            'admin/product/createPost' => [
+                'controller' => \CoreCart\Admin\Controller\ProductController::class,
+                'method'     => 'createPost',
                 'middleware'  => $authenticatedMutation,
                 'methods'    => ['POST'],
+            ],
+            'admin/product/edit' => [
+                'controller' => \CoreCart\Admin\Controller\ProductController::class,
+                'method'     => 'edit',
+                'middleware'  => $authenticated,
+                'methods'    => ['GET'],
             ],
             'admin/product/update' => [
                 'controller' => \CoreCart\Admin\Controller\ProductController::class,
@@ -149,6 +161,22 @@ class AdminRouteProvider
             'admin/customer/view' => [
                 'controller' => \CoreCart\Admin\Controller\CustomerController::class,
                 'method'     => 'view',
+                'middleware'  => $authenticated,
+                'methods'    => ['GET'],
+            ],
+
+            // Settings
+            'admin/setting/index' => [
+                'controller' => \CoreCart\Admin\Controller\SettingController::class,
+                'method'     => 'index',
+                'middleware'  => $authenticated,
+                'methods'    => ['GET'],
+            ],
+
+            // Modifications
+            'admin/modification/index' => [
+                'controller' => \CoreCart\Admin\Controller\ModificationController::class,
+                'method'     => 'index',
                 'middleware'  => $authenticated,
                 'methods'    => ['GET'],
             ],

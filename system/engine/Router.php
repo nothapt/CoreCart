@@ -12,6 +12,11 @@ class Router
      */
     private array $routes = [];
 
+    /**
+     * @var array<string, string> Named routes: name → normalized route path
+     */
+    private array $routeNames = [];
+
     public function __construct(Container $container)
     {
         $this->container = $container;
@@ -149,6 +154,65 @@ class Router
 
         // Kick off the chain with the original request
         return $next($request);
+    }
+
+    /**
+     * Generate a URL for a named route.
+     *
+     * Replaces {param} placeholders with values from $params.
+     * Remaining params are appended as query string.
+     *
+     * Example: $router->url('product/view', ['id' => 5]) → '/catalog/product/view?id=5'
+     */
+    public function url(string $route, array $params = []): string
+    {
+        $normalizedRoute = $this->normalizeRoute($route);
+
+        if (!isset($this->routes[$normalizedRoute])) {
+            return '/' . ltrim($route, '/');
+        }
+
+        // Replace {param} placeholders in the route pattern
+        $url = preg_replace_callback('#\{(\w+)\}#', static function (array $matches) use (&$params): string {
+            $key = $matches[1];
+            $value = $params[$key] ?? '';
+            unset($params[$key]);
+            return (string) $value;
+        }, $normalizedRoute);
+
+        // Append remaining params as query string
+        if (!empty($params)) {
+            $url .= '?' . http_build_query($params);
+        }
+
+        return $url;
+    }
+
+    /**
+     * Register a named route (alias for addRoute with a name).
+     */
+    public function addNamedRoute(
+        string $name,
+        string $route,
+        string $controller,
+        string $method = 'index',
+        array $middleware = [],
+        array $methods = [],
+    ): void {
+        $this->addRoute($route, $controller, $method, $middleware, $methods);
+        $this->routeNames[$name] = $this->normalizeRoute($route);
+    }
+
+    /**
+     * Get the URL for a named route.
+     */
+    public function namedUrl(string $name, array $params = []): string
+    {
+        $route = $this->routeNames[$name] ?? null;
+        if ($route === null) {
+            return '/';
+        }
+        return $this->url($route, $params);
     }
 
     private function normalizeRoute(string $route): string

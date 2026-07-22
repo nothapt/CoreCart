@@ -1,26 +1,26 @@
 {% extends '@admin/layout/auth.html.twig' %}
 
-{% block title %}Вход — CoreCart Admin{% endblock %}
+{% block title %}Sign in — CoreCart Admin{% endblock %}
 
 {% block content %}
 <div class="cc-admin-auth-card">
     <h1 class="cc-admin-auth-title">CoreCart</h1>
-    <p class="cc-admin-auth-subtitle">Вход в панель управления</p>
+    <p class="cc-admin-auth-subtitle">Admin panel sign in</p>
 
     <form method="post" action="/admin/auth/loginPost">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
 
         <div class="cc-field">
-            <label class="cc-label" for="login">Логин или email</label>
+            <label class="cc-label" for="login">Username or email</label>
             <input type="text" id="login" name="login" class="cc-input" required autofocus>
         </div>
 
         <div class="cc-field">
-            <label class="cc-label" for="password">Пароль</label>
+            <label class="cc-label" for="password">Password</label>
             <input type="password" id="password" name="password" class="cc-input" required>
         </div>
 
-        <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">Войти</button>
+        <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">Sign in</button>
     </form>
 </div>
 {% endblock %}

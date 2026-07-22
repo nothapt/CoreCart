@@ -1,12 +1,12 @@
 {% extends '@admin/layout/base.html.twig' %}
-{% block title %}Товары — CoreCart Admin{% endblock %}
+{% block title %}Products — CoreCart Admin{% endblock %}
 {% block content %}
 <div class="cc-page-header">
     <div>
-        <h1>Товары</h1>
-        <p>Управление товарами каталога.</p>
+        <h1>Products</h1>
+        <p>Manage catalog products.</p>
     </div>
-    <a href="/admin/product/create" class="cc-btn cc-btn-primary">Добавить товар</a>
+    <a href="/admin/product/create" class="cc-btn cc-btn-primary">Add product</a>
 </div>
 
 {% if products is defined and products|length > 0 %}
@@ -14,11 +14,11 @@
     <thead>
         <tr>
             <th>ID</th>
-            <th>Товар</th>
+            <th>Product</th>
             <th>Model</th>
-            <th>Цена</th>
-            <th>Остаток</th>
-            <th>Статус</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
             <th></th>
         </tr>
     </thead>
@@ -28,26 +28,26 @@
             <td>{{ product.id }}</td>
             <td>{{ product.name }}</td>
             <td>{{ product.model|default('—') }}</td>
-            <td>{{ product.price }} ₽</td>
+            <td>{{ product.price }} $</td>
             <td>{{ product.quantity }}</td>
             <td>
                 {% if product.status == 1 %}
-                    <span class="cc-badge cc-badge-success">Включён</span>
+                    <span class="cc-badge cc-badge-success">Enabled</span>
                 {% else %}
-                    <span class="cc-badge cc-badge-neutral">Выключен</span>
+                    <span class="cc-badge cc-badge-neutral">Disabled</span>
                 {% endif %}
             </td>
-            <td><a href="/admin/product/edit?id={{ product.id }}" class="cc-btn cc-btn-secondary">Редактировать</a></td>
+            <td><a href="/admin/product/edit?id={{ product.id }}" class="cc-btn cc-btn-secondary">Edit</a></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% else %}
     {% include '@admin/common/empty-state.html.twig' with {
-        title: 'Товаров нет',
-        message: 'Добавьте первый товар, чтобы он появился в каталоге.',
+        title: 'No products',
+        message: 'Add the first product to make it appear in the catalog.',
         action_url: '/admin/product/create',
-        action_text: 'Добавить товар'
+        action_text: 'Add product'
     } %}
 {% endif %}
 {% endblock %}

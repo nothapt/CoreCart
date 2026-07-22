@@ -18,6 +18,12 @@ class AccountRouteProvider
             \CoreCart\System\Engine\CsrfMiddleware::class,
         ];
 
+        $publicMutation = [
+            \CoreCart\System\Engine\SecurityHeaders::class,
+            \CoreCart\System\Engine\CsrfMiddleware::class,
+            \CoreCart\System\Engine\RequestMiddleware::class,
+        ];
+
         $customerAuth = [
             \CoreCart\System\Engine\SecurityHeaders::class,
             \CoreCart\System\Engine\CustomerAuthMiddleware::class,
@@ -31,18 +37,30 @@ class AccountRouteProvider
         ];
 
         $router->addRoutes([
-            // Auth (public, CSRF on POST)
+            // Auth (public)
             'account/login' => [
                 'controller' => \CoreCart\Account\Controller\AuthController::class,
                 'method'     => 'login',
                 'middleware'  => $publicWithCsrf,
-                'methods'    => ['GET', 'POST'],
+                'methods'    => ['GET'],
+            ],
+            'account/loginPost' => [
+                'controller' => \CoreCart\Account\Controller\AuthController::class,
+                'method'     => 'loginPost',
+                'middleware'  => $publicMutation,
+                'methods'    => ['POST'],
             ],
             'account/register' => [
                 'controller' => \CoreCart\Account\Controller\AuthController::class,
                 'method'     => 'register',
                 'middleware'  => $publicWithCsrf,
-                'methods'    => ['GET', 'POST'],
+                'methods'    => ['GET'],
+            ],
+            'account/registerPost' => [
+                'controller' => \CoreCart\Account\Controller\AuthController::class,
+                'method'     => 'registerPost',
+                'middleware'  => $publicMutation,
+                'methods'    => ['POST'],
             ],
             'account/logout' => [
                 'controller' => \CoreCart\Account\Controller\AuthController::class,

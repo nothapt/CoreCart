@@ -1,16 +1,16 @@
 {% extends '@storefront/layout/base.html.twig' %}
 
-{% block title %}Оформление заказа — CoreCart{% endblock %}
+{% block title %}Checkout — CoreCart{% endblock %}
 
 {% block content %}
-<h1 class="cc-mb-4">Оформление заказа</h1>
+<h1 class="cc-mb-4">Checkout</h1>
 
-<div style="display:grid;grid-template-columns:1fr 360px;gap:var(--cc-space-8);">
+<div class="cc-checkout-layout">
     <div>
         <form method="post" action="/checkout/confirm" class="cc-card cc-card-body">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
 
-            <h2 class="cc-mb-4">Контактные данные</h2>
+            <h2 class="cc-mb-4">Contact information</h2>
 
             <div class="cc-field">
                 <label class="cc-label" for="email">Email</label>
@@ -18,65 +18,63 @@
             </div>
 
             <div class="cc-field">
-                <label class="cc-label" for="phone">Телефон</label>
+                <label class="cc-label" for="phone">Phone</label>
                 <input type="tel" id="phone" name="phone" class="cc-input" value="{{ customer.phone|default('') }}">
             </div>
 
-            <h2 class="cc-mt-8 cc-mb-4">Адрес доставки</h2>
+            <h2 class="cc-mt-8 cc-mb-4">Shipping address</h2>
 
             <div class="cc-grid cc-grid-2">
                 <div class="cc-field">
-                    <label class="cc-label" for="firstname">Имя</label>
+                    <label class="cc-label" for="firstname">First name</label>
                     <input type="text" id="firstname" name="firstname" class="cc-input" value="{{ customer.firstname|default('') }}" required>
                 </div>
                 <div class="cc-field">
-                    <label class="cc-label" for="lastname">Фамилия</label>
+                    <label class="cc-label" for="lastname">Last name</label>
                     <input type="text" id="lastname" name="lastname" class="cc-input" value="{{ customer.lastname|default('') }}" required>
                 </div>
             </div>
 
             <div class="cc-field">
-                <label class="cc-label" for="address_1">Адрес</label>
+                <label class="cc-label" for="address_1">Address</label>
                 <input type="text" id="address_1" name="address_1" class="cc-input" required>
             </div>
 
             <div class="cc-grid cc-grid-3">
                 <div class="cc-field">
-                    <label class="cc-label" for="city">Город</label>
+                    <label class="cc-label" for="city">City</label>
                     <input type="text" id="city" name="city" class="cc-input" required>
                 </div>
                 <div class="cc-field">
-                    <label class="cc-label" for="postcode">Индекс</label>
+                    <label class="cc-label" for="postcode">Postcode</label>
                     <input type="text" id="postcode" name="postcode" class="cc-input" required>
                 </div>
                 <div class="cc-field">
-                    <label class="cc-label" for="country">Страна</label>
+                    <label class="cc-label" for="country">Country</label>
                     <input type="text" id="country" name="country" class="cc-input" required>
                 </div>
             </div>
 
             <div class="cc-mt-8">
-                <button type="submit" class="cc-btn cc-btn-primary" style="font-size:var(--cc-font-size-lg);padding:var(--cc-space-3) var(--cc-space-8);">
-                    Подтвердить заказ
-                </button>
-                <a href="/cart" class="cc-btn cc-btn-secondary cc-mt-2">Вернуться в корзину</a>
+                <button type="submit" class="cc-btn cc-btn-primary cc-btn-lg">Confirm order</button>
+                <a href="/cart" class="cc-btn cc-btn-secondary cc-mt-2">Back to cart</a>
             </div>
         </form>
     </div>
 
     <div>
         <div class="cc-card cc-card-body">
-            <h3 class="cc-mb-4">Ваш заказ</h3>
+            <h3 class="cc-mb-4">Your order</h3>
             {% for item in items %}
             <div class="cc-flex cc-justify-between cc-mb-2 cc-text-sm">
-                <span>{{ item.name }} × {{ item.quantity }}</span>
-                <span>{{ item.total }} ₽</span>
+                <span>{{ item.name }} &times; {{ item.quantity }}</span>
+                <span>{{ item.total }} $</span>
             </div>
             {% endfor %}
             <hr>
             <div class="cc-flex cc-justify-between">
-                <strong>Итого:</strong>
-                <strong>{{ total }} ₽</strong>
+                <strong>Total:</strong>
+                <strong>{{ total }} $</strong>
             </div>
         </div>
     </div>

@@ -4,34 +4,37 @@ declare(strict_types=1);
 namespace CoreCart\Admin\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\HtmlResponse;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
 use CoreCart\System\Infrastructure\SessionInterface;
 use CoreCart\System\Dto\LoginDTO;
+use CoreCart\System\View\TemplateRendererInterface;
 
 class AuthController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function login(Request $request): Response
     {
         if ($request->isLoggedIn()) {
-            return JsonResponse::success(null, 'Already logged in');
+            return new RedirectResponse('/admin/dashboard');
         }
 
         /** @var SessionInterface $session */
         $session = $this->container->get(SessionInterface::class);
 
-        return new JsonResponse([
-            'message'    => 'Login form',
+        $data = [
             'csrf_token' => $session->get('csrf_token', ''),
-        ]);
+            'shop_name'  => 'CoreCart',
+        ];
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('auth/login', $data));
     }
 
     public function loginPost(Request $request): Response
@@ -45,7 +48,10 @@ class AuthController
         ]);
 
         if (!empty($validator->getErrors()['fields'])) {
-            return JsonResponse::validationErrors($validator->getErrors()['fields']);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', 'Please fill in all fields correctly');
+            return new RedirectResponse('/admin/auth/login');
         }
 
         try {
@@ -63,11 +69,12 @@ class AuthController
             $session->set('admin_last_activity', time());
             $session->set('admin_ip', $request->getIpAddress());
 
-            return JsonResponse::success($user, 'Login successful');
+            return new RedirectResponse('/admin/dashboard');
         } catch (\RuntimeException $e) {
-            $message = $e->getMessage();
-            $code = str_starts_with($message, 'Too many') ? 429 : 401;
-            return JsonResponse::error($message, $code);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
+            return new RedirectResponse('/admin/auth/login');
         }
     }
 
@@ -77,7 +84,7 @@ class AuthController
         $session = $this->container->get(SessionInterface::class);
         $session->invalidate();
 
-        $response = JsonResponse::success(null, 'Logged out');
+        $response = new RedirectResponse('/admin/auth/login');
         $response->addCookie(session_name(), '', time() - 42000, '/');
         return $response;
     }
@@ -90,6 +97,6 @@ class AuthController
             $session->set('csrf_token', bin2hex(random_bytes(32)));
         }
 
-        return new JsonResponse(['data' => ['csrf_token' => $session->get('csrf_token')]]);
+        return new \CoreCart\System\Engine\JsonResponse(['data' => ['csrf_token' => $session->get('csrf_token')]]);
     }
 }

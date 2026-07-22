@@ -1,7 +1,10 @@
-{% for type, messages in app.flashes|default({}) %}
-    {% for message in messages %}
-        <div class="cc-alert cc-alert-{{ type }}" role="alert">
-            {{ message }}
-        </div>
-    {% endfor %}
-{% endfor %}
+{% if flash_success is defined and flash_success %}
+    <div class="cc-alert cc-alert-success" role="alert">
+        {{ flash_success }}
+    </div>
+{% endif %}
+{% if flash_error is defined and flash_error %}
+    <div class="cc-alert cc-alert-danger" role="alert">
+        {{ flash_error }}
+    </div>
+{% endif %}

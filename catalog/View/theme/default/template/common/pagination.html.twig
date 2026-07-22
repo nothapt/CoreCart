@@ -1,12 +1,12 @@
 {% if pages is defined and pages > 1 %}
-<nav aria-label="Постраничная навигация" class="cc-mt-8 cc-text-center">
-    <ul style="display:flex;gap:var(--cc-space-1);list-style:none;justify-content:center;padding:0;">
+<nav aria-label="Pagination" class="cc-mt-8 cc-text-center">
+    <ul class="cc-pagination">
         {% for p in 1..pages %}
             <li>
                 {% if p == current_page|default(1) %}
-                    <span class="cc-btn cc-btn-primary" aria-current="page" style="min-width:44px">{{ p }}</span>
+                    <span class="cc-btn cc-btn-primary" aria-current="page">{{ p }}</span>
                 {% else %}
-                    <a href="{{ base_url|default('?') }}?page={{ p }}" class="cc-btn cc-btn-secondary" style="min-width:44px">{{ p }}</a>
+                    <a href="{{ base_url|default('?') }}?page={{ p }}" class="cc-btn cc-btn-secondary">{{ p }}</a>
                 {% endif %}
             </li>
         {% endfor %}

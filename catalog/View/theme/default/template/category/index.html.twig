@@ -1,38 +1,40 @@
 {% extends '@storefront/layout/base.html.twig' %}
 
-{% block title %}{{ category.name|default('Каталог') }} — CoreCart{% endblock %}
+{% block title %}{{ category.name|default('Catalog') }} — CoreCart{% endblock %}
 
 {% block content %}
 {% include '@storefront/common/breadcrumbs.html.twig' %}
 
-<h1 class="cc-mb-4">{{ category.name|default('Каталог') }}</h1>
+<h1 class="cc-mb-4">{{ category.name|default('Catalog') }}</h1>
 
 {% if products is defined and products|length > 0 %}
     <div class="cc-flex cc-justify-between cc-items-center cc-mb-4">
-        <span class="cc-text-muted cc-text-sm">{{ products|length }} товара</span>
+        <span class="cc-text-muted cc-text-sm">{{ products|length }} products</span>
     </div>
     <div class="cc-grid cc-grid-4">
         {% for product in products %}
-        <a href="/product/{{ product.id }}" class="cc-product-card" style="text-decoration:none;">
-            <div class="cc-product-card-image">
-                {% if product.image %}
-                    <img src="{{ product.image }}" alt="{{ product.name }}">
-                {% endif %}
-            </div>
+        <article class="cc-product-card">
+            <a href="/product/{{ product.id }}">
+                <div class="cc-product-card-image">
+                    {% if product.image %}
+                        <img src="{{ product.image }}" alt="{{ product.name }}">
+                    {% endif %}
+                </div>
+            </a>
             <div class="cc-product-card-body">
-                <div class="cc-product-card-name">{{ product.name }}</div>
-                <div class="cc-product-card-price">{{ product.price }} ₽</div>
+                <a href="/product/{{ product.id }}" class="cc-product-card-name">{{ product.name }}</a>
+                <div class="cc-product-card-price">{{ product.price }} $</div>
             </div>
-        </a>
+        </article>
         {% endfor %}
     </div>
     {% include '@storefront/common/pagination.html.twig' %}
 {% else %}
     {% include '@storefront/common/empty-state.html.twig' with {
-        title: 'Товаров нет',
-        message: 'В этой категории пока нет товаров.',
+        title: 'No products',
+        message: 'This category has no products yet.',
         action_url: '/catalog',
-        action_text: 'Перейти в каталог'
+        action_text: 'Browse catalog'
     } %}
 {% endif %}
 {% endblock %}

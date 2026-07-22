@@ -1,27 +1,27 @@
 {% extends '@admin/layout/base.html.twig' %}
-{% block title %}Заказ #{{ order.id }} — CoreCart Admin{% endblock %}
+{% block title %}Order #{{ order.id }} — CoreCart Admin{% endblock %}
 {% block content %}
 <div class="cc-page-header">
     <div>
-        <h1>Заказ #{{ order.id }}</h1>
+        <h1>Order #{{ order.id }}</h1>
         <p>{{ order.date_added }}</p>
     </div>
-    <a href="/admin/order/index" class="cc-btn cc-btn-secondary">Назад к списку</a>
+    <a href="/admin/order/index" class="cc-btn cc-btn-secondary">Back to list</a>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 360px;gap:var(--cc-space-6);">
+<div class="cc-form-grid">
     <div>
         <div class="cc-card cc-card-body cc-mb-4">
-            <h3 class="cc-mb-4">Товары</h3>
+            <h3 class="cc-mb-4">Items</h3>
             <table class="cc-table">
-                <thead><tr><th>Товар</th><th>Кол-во</th><th>Цена</th><th>Итого</th></tr></thead>
+                <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
                 <tbody>
                     {% for item in order.items %}
                     <tr>
                         <td>{{ item.name }}</td>
                         <td>{{ item.quantity }}</td>
-                        <td>{{ item.price }} ₽</td>
-                        <td>{{ item.total }} ₽</td>
+                        <td>{{ item.price }} $</td>
+                        <td>{{ item.total }} $</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -30,12 +30,12 @@
     </div>
     <div>
         <div class="cc-card cc-card-body cc-mb-4">
-            <h3 class="cc-mb-4">Покупатель</h3>
+            <h3 class="cc-mb-4">Customer</h3>
             <p class="cc-text-sm"><strong>Email:</strong> {{ order.email|default('—') }}</p>
-            <p class="cc-text-sm"><strong>Телефон:</strong> {{ order.phone|default('—') }}</p>
+            <p class="cc-text-sm"><strong>Phone:</strong> {{ order.phone|default('—') }}</p>
         </div>
         <div class="cc-card cc-card-body cc-mb-4">
-            <h3 class="cc-mb-4">Адрес доставки</h3>
+            <h3 class="cc-mb-4">Shipping address</h3>
             <p class="cc-text-sm">
                 {{ order.shipping_firstname|default('') }} {{ order.shipping_lastname|default('') }}<br>
                 {{ order.shipping_address_1|default('') }}<br>
@@ -44,18 +44,18 @@
             </p>
         </div>
         <div class="cc-card cc-card-body">
-            <h3 class="cc-mb-4">Итоги</h3>
-            <div class="cc-flex cc-justify-between cc-mb-2"><span class="cc-text-muted">Статус:</span><span class="cc-badge cc-badge-info">{{ order.status_label }}</span></div>
-            <div class="cc-flex cc-justify-between cc-mb-2"><span class="cc-text-muted">Итого:</span><strong>{{ order.total }} ₽</strong></div>
+            <h3 class="cc-mb-4">Summary</h3>
+            <div class="cc-flex cc-justify-between cc-mb-2"><span class="cc-text-muted">Status:</span><span class="cc-badge cc-badge-info">{{ order.status_label }}</span></div>
+            <div class="cc-flex cc-justify-between cc-mb-2"><span class="cc-text-muted">Total:</span><strong>{{ order.total }} $</strong></div>
         </div>
 
         <div class="cc-card cc-card-body cc-mt-4">
-            <h3 class="cc-mb-4">Изменить статус</h3>
+            <h3 class="cc-mb-4">Update status</h3>
             <form method="post" action="/admin/order/updateStatus">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
                 <input type="hidden" name="order_id" value="{{ order.id }}">
                 <div class="cc-field">
-                    <label class="cc-label" for="status">Новый статус</label>
+                    <label class="cc-label" for="status">New status</label>
                     <select id="status" name="status" class="cc-input">
                         <option value="1">Pending</option>
                         <option value="2">Processing</option>
@@ -65,10 +65,10 @@
                     </select>
                 </div>
                 <div class="cc-field">
-                    <label class="cc-label" for="comment">Комментарий</label>
+                    <label class="cc-label" for="comment">Comment</label>
                     <textarea id="comment" name="comment" class="cc-input" rows="3"></textarea>
                 </div>
-                <button type="submit" class="cc-btn cc-btn-primary">Обновить статус</button>
+                <button type="submit" class="cc-btn cc-btn-primary">Update status</button>
             </form>
         </div>
     </div>

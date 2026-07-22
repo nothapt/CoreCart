@@ -208,3 +208,19 @@
     color: var(--cc-color-text);
     margin-bottom: var(--cc-space-2);
 }
+
+/* Input sizes */
+.cc-input-sm { width: 70px; }
+.cc-input-md { width: 120px; }
+
+/* Flex utilities */
+.cc-flex-1 { flex: 1; }
+
+/* Max width */
+.cc-max-w-sm { max-width: 400px; margin: 0 auto; }
+
+/* Auth wrapper */
+.cc-auth-wrapper {
+    max-width: 400px;
+    margin: 0 auto;
+}

@@ -4,19 +4,19 @@ declare(strict_types=1);
 namespace CoreCart\Admin\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\HtmlResponse;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
 use CoreCart\System\Infrastructure\OrderStatus;
+use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\View\TemplateRendererInterface;
 
 class OrderController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -27,51 +27,87 @@ class OrderController
             try {
                 $status = OrderStatus::fromInt((int) $statusParam);
             } catch (\InvalidArgumentException $e) {
-                return JsonResponse::error('Invalid status value', 422, 'VALIDATION_ERROR');
+                // ignore
             }
         }
 
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
         $data = $orderService->getOrders($page, 20, $status);
 
-        return JsonResponse::success($data);
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        $ctx = [
+            'orders'       => $data['orders'] ?? [],
+            'total'        => $data['total'] ?? 0,
+            'page'         => $data['page'] ?? 1,
+            'pages'        => $data['pages'] ?? 1,
+            'active_menu'  => 'order',
+            'csrf_token'   => $session->get('csrf_token', ''),
+            'shop_name'    => 'CoreCart',
+        ];
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('order/list', $ctx));
     }
 
     public function view(Request $request): Response
     {
         $id = (int) $request->getQueryParam('id', 0);
         if ($id <= 0) {
-            return JsonResponse::error('Invalid order ID', 400);
+            return new RedirectResponse('/admin/order/index');
         }
 
         $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
         $order = $orderService->getOrder($id);
 
         if (!$order) {
-            return JsonResponse::error('Order not found', 404);
+            return new RedirectResponse('/admin/order/index');
         }
 
-        return JsonResponse::success($order->toArray());
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        $data = [
+            'order'        => $order,
+            'active_menu'  => 'order',
+            'csrf_token'   => $session->get('csrf_token', ''),
+            'shop_name'    => 'CoreCart',
+        ];
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('order/view', $data));
     }
 
     public function updateStatus(Request $request): Response
     {
-        $id = (int) $request->getInput('order_id', $request->getQueryParam('id', 0));
+        $id = (int) $request->getInput('order_id', 0);
         $statusValue = (int) $request->getInput('status', 0);
 
         if ($id <= 0) {
-            return JsonResponse::error('Invalid order ID', 400);
+            return new RedirectResponse('/admin/order/index');
         }
 
         try {
             $status = OrderStatus::fromInt($statusValue);
             $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
             $orderService->updateStatus($id, $status);
-            return JsonResponse::success(null, 'Order status updated');
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Order status updated');
         } catch (\InvalidArgumentException $e) {
-            return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 400);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/admin/order/view?id=' . $id);
     }
 }

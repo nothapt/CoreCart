@@ -1,11 +1,11 @@
 {% if breadcrumbs is defined and breadcrumbs|length > 0 %}
-<nav aria-label="Хлебные крошки" class="cc-text-sm cc-text-muted cc-mb-4">
-    <ol style="display:flex;gap:var(--cc-space-2);list-style:none;margin:0;padding:0;">
-        <li><a href="/" class="cc-footer-link" style="display:inline">Главная</a></li>
+<nav aria-label="Breadcrumb" class="cc-text-sm cc-text-muted cc-mb-4">
+    <ol class="cc-breadcrumbs">
+        <li><a href="/" class="cc-footer-link">Home</a></li>
         {% for crumb in breadcrumbs %}
             <li aria-hidden="true">/</li>
             {% if crumb.url is defined and crumb.url %}
-                <li><a href="{{ crumb.url }}" class="cc-footer-link" style="display:inline">{{ crumb.name }}</a></li>
+                <li><a href="{{ crumb.url }}" class="cc-footer-link">{{ crumb.name }}</a></li>
             {% else %}
                 <li>{{ crumb.name }}</li>
             {% endif %}

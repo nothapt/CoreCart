@@ -1,10 +1,10 @@
 {% extends '@admin/layout/base.html.twig' %}
-{% block title %}Заказы — CoreCart Admin{% endblock %}
+{% block title %}Orders — CoreCart Admin{% endblock %}
 {% block content %}
 <div class="cc-page-header">
     <div>
-        <h1>Заказы</h1>
-        <p>Управление заказами магазина.</p>
+        <h1>Orders</h1>
+        <p>Manage store orders.</p>
     </div>
 </div>
 
@@ -13,11 +13,11 @@
     <thead>
         <tr>
             <th>ID</th>
-            <th>Покупатель</th>
+            <th>Customer</th>
             <th>Email</th>
-            <th>Статус</th>
-            <th>Итого</th>
-            <th>Дата</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Date</th>
             <th></th>
         </tr>
     </thead>
@@ -25,7 +25,7 @@
         {% for order in orders %}
         <tr>
             <td>#{{ order.id }}</td>
-            <td>{{ order.customer_name|default('Гость') }}</td>
+            <td>{{ order.customer_name|default('Guest') }}</td>
             <td>{{ order.email|default('—') }}</td>
             <td>
                 {% set badge_class = 'cc-badge-neutral' %}
@@ -36,17 +36,17 @@
                 {% endif %}
                 <span class="cc-badge {{ badge_class }}">{{ order.status_label }}</span>
             </td>
-            <td>{{ order.total }} ₽</td>
+            <td>{{ order.total }} $</td>
             <td>{{ order.date_added }}</td>
-            <td><a href="/admin/order/view?id={{ order.id }}" class="cc-btn cc-btn-secondary">Просмотр</a></td>
+            <td><a href="/admin/order/view?id={{ order.id }}" class="cc-btn cc-btn-secondary">View</a></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% else %}
     {% include '@admin/common/empty-state.html.twig' with {
-        title: 'Заказов нет',
-        message: 'Заказы появятся здесь, когда покупатели начнут оформлять покупки.'
+        title: 'No orders',
+        message: 'Orders will appear here when customers start placing purchases.'
     } %}
 {% endif %}
 {% endblock %}

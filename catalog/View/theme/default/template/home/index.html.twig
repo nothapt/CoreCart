@@ -1,38 +1,38 @@
 {% extends '@storefront/layout/base.html.twig' %}
 
-{% block title %}CoreCart — Интернет-магазин{% endblock %}
+{% block title %}CoreCart — Online Store{% endblock %}
 
 {% block content %}
-<section class="cc-mb-8">
-    <div class="cc-card cc-p-4" style="background:var(--cc-color-surface);display:flex;align-items:center;gap:var(--cc-space-8);">
-        <div style="flex:1;">
-            <h1 style="margin-bottom:var(--cc-space-2);">Простые покупки без лишних действий</h1>
-            <p class="cc-text-muted" style="font-size:var(--cc-font-size-lg);">Найдите товар, добавьте в корзину и оформите заказ.</p>
-            <a href="/catalog" class="cc-btn cc-btn-primary">Перейти в каталог</a>
-        </div>
+<section class="cc-hero cc-card cc-card-body cc-mb-8">
+    <div class="cc-hero-content">
+        <h1>Simple shopping without extra steps</h1>
+        <p class="cc-text-muted cc-text-lg">Find a product, add it to cart and place your order.</p>
+        <a href="/catalog" class="cc-btn cc-btn-primary">Browse catalog</a>
     </div>
 </section>
 
 {% if categories is defined and categories|length > 0 %}
 <section class="cc-mb-8">
-    <h2 class="cc-mb-4">Популярные категории</h2>
+    <h2 class="cc-mb-4">Popular categories</h2>
     <div class="cc-grid cc-grid-4">
         {% for category in categories %}
-        <a href="/category/{{ category.id }}" class="cc-product-card" style="text-decoration:none;">
-            <div class="cc-product-card-image" style="aspect-ratio:4/3;">
-                {% if category.image %}
-                    <img src="{{ category.image }}" alt="{{ category.name }}">
-                {% else %}
-                    <span class="cc-text-muted">{{ category.name }}</span>
-                {% endif %}
-            </div>
+        <article class="cc-product-card">
+            <a href="/category/{{ category.id }}">
+                <div class="cc-product-card-image cc-product-card-image-4x3">
+                    {% if category.image %}
+                        <img src="{{ category.image }}" alt="{{ category.name }}">
+                    {% else %}
+                        <span class="cc-text-muted">{{ category.name }}</span>
+                    {% endif %}
+                </div>
+            </a>
             <div class="cc-product-card-body">
-                <div class="cc-product-card-name">{{ category.name }}</div>
+                <a href="/category/{{ category.id }}" class="cc-product-card-name">{{ category.name }}</a>
                 {% if category.product_count is defined %}
-                    <div class="cc-text-xs cc-text-muted">{{ category.product_count }} товара</div>
+                    <div class="cc-text-xs cc-text-muted">{{ category.product_count }} products</div>
                 {% endif %}
             </div>
-        </a>
+        </article>
         {% endfor %}
     </div>
 </section>
@@ -40,29 +40,31 @@
 
 {% if products is defined and products|length > 0 %}
 <section class="cc-mb-8">
-    <h2 class="cc-mb-4">Рекомендуемые товары</h2>
+    <h2 class="cc-mb-4">Featured products</h2>
     <div class="cc-grid cc-grid-4">
         {% for product in products %}
-        <a href="/product/{{ product.id }}" class="cc-product-card" style="text-decoration:none;">
-            <div class="cc-product-card-image">
-                {% if product.image %}
-                    <img src="{{ product.image }}" alt="{{ product.name }}">
-                {% endif %}
-            </div>
+        <article class="cc-product-card">
+            <a href="/product/{{ product.id }}">
+                <div class="cc-product-card-image">
+                    {% if product.image %}
+                        <img src="{{ product.image }}" alt="{{ product.name }}">
+                    {% endif %}
+                </div>
+            </a>
             <div class="cc-product-card-body">
-                <div class="cc-product-card-name">{{ product.name }}</div>
-                <div class="cc-product-card-price">{{ product.price }} ₽</div>
+                <a href="/product/{{ product.id }}" class="cc-product-card-name">{{ product.name }}</a>
+                <div class="cc-product-card-price">{{ product.price }} $</div>
                 {% if product.stock_status is defined %}
-                    <span class="cc-badge cc-badge-success">В наличии</span>
+                    <span class="cc-badge cc-badge-success">In stock</span>
                 {% endif %}
-                <form method="post" action="/cart/add" style="margin-top:var(--cc-space-2);">
+                <form method="post" action="/cart/add" class="cc-mt-2">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token|default('') }}">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="quantity" value="1">
-                    <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">В корзину</button>
+                    <button type="submit" class="cc-btn cc-btn-primary cc-btn-block">Add to cart</button>
                 </form>
             </div>
-        </a>
+        </article>
         {% endfor %}
     </div>
 </section>
@@ -71,13 +73,13 @@
 <section class="cc-mb-8">
     <div class="cc-grid cc-grid-3">
         <div class="cc-card cc-card-body cc-text-center">
-            <strong>Безопасное оформление</strong>
+            <strong>Secure checkout</strong>
         </div>
         <div class="cc-card cc-card-body cc-text-center">
-            <strong>Понятная доставка</strong>
+            <strong>Clear shipping</strong>
         </div>
         <div class="cc-card cc-card-body cc-text-center">
-            <strong>Поддержка покупателей</strong>
+            <strong>Customer support</strong>
         </div>
     </div>
 </section>

@@ -4,18 +4,18 @@ declare(strict_types=1);
 namespace CoreCart\Admin\Controller;
 
 use CoreCart\System\Engine\Container;
+use CoreCart\System\Engine\HtmlResponse;
+use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
-use CoreCart\System\Engine\JsonResponse;
+use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\View\TemplateRendererInterface;
 
 class CategoryController
 {
-    private Container $container;
-
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(
+        private Container $container,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -23,7 +23,22 @@ class CategoryController
         $categoryService = $this->container->get(\CoreCart\System\Service\CategoryService::class);
         $data = $categoryService->getAllCategories($page);
 
-        return JsonResponse::success($data);
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
+        $ctx = [
+            'categories'   => $data['categories'] ?? [],
+            'total'        => $data['total'] ?? 0,
+            'page'         => $data['page'] ?? 1,
+            'pages'        => $data['pages'] ?? 1,
+            'active_menu'  => 'category',
+            'csrf_token'   => $session->get('csrf_token', ''),
+            'shop_name'    => 'CoreCart',
+        ];
+
+        /** @var TemplateRendererInterface $renderer */
+        $renderer = $this->container->get(TemplateRendererInterface::class);
+        return new HtmlResponse($renderer->render('category/list', $ctx));
     }
 
     public function create(Request $request): Response
@@ -32,20 +47,29 @@ class CategoryController
 
         try {
             $categoryService = $this->container->get(\CoreCart\System\Service\CategoryService::class);
-            $id = $categoryService->createCategory($dto);
-            return JsonResponse::success(['category_id' => $id], 'Category created', 201);
+            $categoryService->createCategory($dto);
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Category created');
         } catch (\InvalidArgumentException $e) {
-            return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 500);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/admin/category/index');
     }
 
     public function update(Request $request): Response
     {
-        $id = (int) $request->getInput('category_id', $request->getQueryParam('id', 0));
+        $id = (int) $request->getInput('category_id', 0);
         if ($id <= 0) {
-            return JsonResponse::error('Invalid category ID', 400);
+            return new RedirectResponse('/admin/category/index');
         }
 
         $dto = \CoreCart\System\Dto\CategoryDTO::fromArray($request->getBody());
@@ -53,27 +77,43 @@ class CategoryController
         try {
             $categoryService = $this->container->get(\CoreCart\System\Service\CategoryService::class);
             $categoryService->updateCategory($id, $dto);
-            return JsonResponse::success(null, 'Category updated');
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Category updated');
         } catch (\InvalidArgumentException $e) {
-            return JsonResponse::error($e->getMessage(), 422, 'VALIDATION_ERROR');
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 404);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/admin/category/index');
     }
 
     public function delete(Request $request): Response
     {
-        $id = (int) $request->getInput('category_id', $request->getQueryParam('id', 0));
+        $id = (int) $request->getInput('category_id', 0);
         if ($id <= 0) {
-            return JsonResponse::error('Invalid category ID', 400);
+            return new RedirectResponse('/admin/category/index');
         }
 
         try {
             $categoryService = $this->container->get(\CoreCart\System\Service\CategoryService::class);
             $categoryService->deleteCategory($id);
-            return JsonResponse::success(null, 'Category deleted');
+
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_success', 'Category deleted');
         } catch (\RuntimeException $e) {
-            return JsonResponse::error($e->getMessage(), 400);
+            /** @var SessionInterface $session */
+            $session = $this->container->get(SessionInterface::class);
+            $session->set('flash_error', $e->getMessage());
         }
+
+        return new RedirectResponse('/admin/category/index');
     }
 }

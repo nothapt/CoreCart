@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Вход — CoreCart Admin{% endblock %}</title>
+    <title>{% block title %}Sign in — CoreCart Admin{% endblock %}</title>
     <link rel="stylesheet" href="{{ assets.css('admin-tokens.css') }}">
     <link rel="stylesheet" href="{{ assets.css('admin-base.css') }}">
     {% block head %}{% endblock %}
@@ -13,7 +13,7 @@
         {% include '@admin/common/flash.html.twig' %}
         {% block content %}{% endblock %}
         <p class="cc-text-center cc-mt-4 cc-text-sm">
-            <a href="/" class="cc-footer-link">Вернуться в магазин</a>
+            <a href="/" class="cc-footer-link">Back to store</a>
         </p>
     </div>
 </body>

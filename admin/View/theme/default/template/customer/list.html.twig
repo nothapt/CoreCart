@@ -1,17 +1,17 @@
 {% extends '@admin/layout/base.html.twig' %}
-{% block title %}Покупатели — CoreCart Admin{% endblock %}
+{% block title %}Customers — CoreCart Admin{% endblock %}
 {% block content %}
 <div class="cc-page-header">
     <div>
-        <h1>Покупатели</h1>
-        <p>Управление покупателями магазина.</p>
+        <h1>Customers</h1>
+        <p>Manage store customers.</p>
     </div>
 </div>
 
 {% if customers is defined and customers|length > 0 %}
 <table class="cc-table">
     <thead>
-        <tr><th>ID</th><th>Имя</th><th>Email</th><th>Дата регистрации</th><th></th></tr>
+        <tr><th>ID</th><th>Name</th><th>Email</th><th>Registered</th><th></th></tr>
     </thead>
     <tbody>
         {% for customer in customers %}
@@ -20,15 +20,15 @@
             <td>{{ customer.firstname }} {{ customer.lastname }}</td>
             <td>{{ customer.email }}</td>
             <td>{{ customer.date_added }}</td>
-            <td><a href="/admin/customer/view?id={{ customer.id }}" class="cc-btn cc-btn-secondary">Просмотр</a></td>
+            <td><a href="/admin/customer/view?id={{ customer.id }}" class="cc-btn cc-btn-secondary">View</a></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% else %}
     {% include '@admin/common/empty-state.html.twig' with {
-        title: 'Покупателей нет',
-        message: 'Покупатели появятся здесь после регистрации в магазине.'
+        title: 'No customers',
+        message: 'Customers will appear here after registering in the store.'
     } %}
 {% endif %}
 {% endblock %}
