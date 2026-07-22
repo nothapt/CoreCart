@@ -35,6 +35,12 @@ class HealthController
         } catch (\Throwable $e) {
             $checks['database'] = 'error';
             $allOk = false;
+
+            error_log(sprintf(
+                '[%s] Readiness database check failed: %s',
+                $request->getRequestId(),
+                $e->getMessage()
+            ));
         }
 
         // Check installed.lock (informational only, does not affect readiness)

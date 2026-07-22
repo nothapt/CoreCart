@@ -20,14 +20,21 @@ class Database
         ?string $host = null,
         ?string $name = null,
         ?string $user = null,
-        ?string $pass = null
+        ?string $pass = null,
+        ?int $port = null,
     ) {
         $host = $host ?? $_ENV['DB_HOST'] ?? 'localhost';
         $name = $name ?? $_ENV['DB_NAME'] ?? 'corecart';
         $user = $user ?? $_ENV['DB_USER'] ?? 'root';
         $pass = $pass ?? $_ENV['DB_PASS'] ?? '';
+        $port = $port ?? (int) ($_ENV['DB_PORT'] ?? 3306);
 
-        $dsn = "mysql:host=$host;dbname=$name;charset=utf8mb4";
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+            $host,
+            $port,
+            $name,
+        );
 
         $options = [
             \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,

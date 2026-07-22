@@ -135,6 +135,7 @@ jobs:
       APP_ENV: testing
       APP_DEBUG: "true"
       DB_HOST: 127.0.0.1
+      DB_PORT: 3306
       DB_NAME: corecart_smoke
       DB_USER: root
       DB_PASS: root
@@ -160,9 +161,24 @@ jobs:
         run: |
           mysql \
             --host=127.0.0.1 \
+            --port=3306 \
             --user=root \
             --password=root \
             corecart_smoke < install/database.sql
+
+      - name: Verify database schema
+        run: |
+          mysql \
+            --host=127.0.0.1 \
+            --port=3306 \
+            --user=root \
+            --password=root \
+            --database=corecart_smoke \
+            --execute="
+              SHOW TABLES;
+              SELECT COUNT(*) AS product_count FROM cc_product;
+              SELECT COUNT(*) AS order_count FROM cc_order;
+            "
 
       - name: Start application
         run: |
@@ -174,7 +190,7 @@ jobs:
       - name: Wait for server
         run: |
           for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:8080/health/live; then
+            if curl --fail-with-body --show-error http://127.0.0.1:8080/health/live; then
               echo "Server is up"
               exit 0
             fi
@@ -186,15 +202,28 @@ jobs:
 
       - name: Check health endpoints
         run: |
-          curl --fail --silent http://127.0.0.1:8080/health/live
-          curl --fail --silent http://127.0.0.1:8080/health/ready
+          set -euo pipefail
+
+          echo "Checking liveness..."
+          curl --fail-with-body --show-error \
+            http://127.0.0.1:8080/health/live
+
+          echo
+          echo "Checking readiness..."
+          if ! curl --fail-with-body --show-error \
+            http://127.0.0.1:8080/health/ready; then
+            echo
+            echo "=== Application log ==="
+            cat storage/logs/ci-server.log
+            exit 1
+          fi
 
       - name: Test catalog routes
         run: |
-          curl --fail --silent http://127.0.0.1:8080/
-          curl --fail --silent http://127.0.0.1:8080/catalog/product
-          curl --fail --silent http://127.0.0.1:8080/catalog/category
-          curl --fail --silent http://127.0.0.1:8080/cart/count
+          curl --fail-with-body --show-error http://127.0.0.1:8080/
+          curl --fail-with-body --show-error http://127.0.0.1:8080/catalog/product
+          curl --fail-with-body --show-error http://127.0.0.1:8080/catalog/category
+          curl --fail-with-body --show-error http://127.0.0.1:8080/cart/count
 
       - name: Stop server
         if: always()
