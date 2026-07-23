@@ -206,6 +206,81 @@ class OrderRepository
         ) > 0;
     }
 
+    public function findByIdForUpdate(int $id): ?Order
+    {
+        $result = $this->db->query(
+            "SELECT o.order_id, o.customer_id, o.status, o.total, o.comment,
+                    o.customer_email, o.customer_phone,
+                    o.shipping_firstname, o.shipping_lastname,
+                    o.shipping_address_1, o.shipping_address_2,
+                    o.shipping_city, o.shipping_postcode,
+                    o.shipping_country, o.shipping_zone,
+                    o.currency_code, o.currency_value,
+                    o.date_added, o.date_modified
+             FROM cc_order o
+             WHERE o.order_id = :id
+             FOR UPDATE",
+            ['id' => $id]
+        );
+
+        if (empty($result)) {
+            return null;
+        }
+
+        $order = Order::fromRow($result[0]);
+        $items = $this->findItems($id);
+
+        return new Order(
+            id: $order->id,
+            customerId: $order->customerId,
+            status: $order->status,
+            total: $order->total,
+            comment: $order->comment,
+            customerEmail: $order->customerEmail,
+            customerPhone: $order->customerPhone,
+            shippingFirstname: $order->shippingFirstname,
+            shippingLastname: $order->shippingLastname,
+            shippingAddress1: $order->shippingAddress1,
+            shippingAddress2: $order->shippingAddress2,
+            shippingCity: $order->shippingCity,
+            shippingPostcode: $order->shippingPostcode,
+            shippingCountry: $order->shippingCountry,
+            shippingZone: $order->shippingZone,
+            currencyCode: $order->currencyCode,
+            currencyValue: $order->currencyValue,
+            dateAdded: $order->dateAdded,
+            dateModified: $order->dateModified,
+            items: $items,
+        );
+    }
+
+    public function addHistory(int $orderId, OrderStatus $status, string $comment, bool $notifyCustomer = false, ?int $adminUserId = null): void
+    {
+        $this->db->execute(
+            "INSERT INTO cc_order_history (order_id, status, comment, notify_customer, admin_user_id)
+             VALUES (:oid, :status, :comment, :notify, :admin)",
+            [
+                'oid'    => $orderId,
+                'status' => $status->value,
+                'comment' => $comment,
+                'notify' => $notifyCustomer ? 1 : 0,
+                'admin'  => $adminUserId,
+            ]
+        );
+    }
+
+    public function getHistory(int $orderId): array
+    {
+        return $this->db->query(
+            "SELECT order_history_id, order_id, status, comment, notify_customer,
+                    admin_user_id, date_added
+             FROM cc_order_history
+             WHERE order_id = :oid
+             ORDER BY date_added DESC",
+            ['oid' => $orderId]
+        );
+    }
+
     public function count(?OrderStatus $status = null): int
     {
         $sql = "SELECT COUNT(*) AS total FROM cc_order";

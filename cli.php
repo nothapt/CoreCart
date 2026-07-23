@@ -2,10 +2,13 @@
 declare(strict_types=1);
 
 /**
- * CoreCart CLI Installer
+ * CoreCart CLI
  *
  * Usage:
  *   php cli.php install --db_user=root --db_pass=secret --db_name=corecart
+ *   php cli.php migrate [options]     Run pending migrations
+ *   php cli.php migrate:status        Show migration status
+ *   php cli.php migrate:rollback --version=...  Rollback to version
  *   php cli.php help
  */
 
@@ -30,8 +33,11 @@ foreach ($argvList as $arg) {
 $command = ($argv ?? [])[1] ?? 'help';
 
 match ($command) {
-    'install' => runInstall($args),
-    default   => printHelp(),
+    'install'        => runInstall($args),
+    'migrate'        => runMigrate($args),
+    'migrate:status' => runMigrateStatus(),
+    'migrate:rollback' => runMigrateRollback($args),
+    default          => printHelp(),
 };
 
 /**
@@ -177,8 +183,11 @@ function printHelp(): void
     CoreCart CLI
 
     Usage:
-      php cli.php install [options]     Install CoreCart
-      php cli.php help                  Show this message
+      php cli.php install [options]        Install CoreCart
+      php cli.php migrate [options]        Run pending migrations
+      php cli.php migrate:status           Show migration status
+      php cli.php migrate:rollback [opts]  Rollback to version
+      php cli.php help                     Show this message
 
     Install options:
       --db_host=localhost     Database host (default: localhost)
@@ -189,8 +198,130 @@ function printHelp(): void
       --admin_email=admin@example.com  Admin email
       --admin_pass=admin123   Admin password (default: admin123)
 
+    Migrate options:
+      --version=VERSION       Target version (optional)
+
     Example:
       php cli.php install --db_user=root --db_pass=secret --db_name=myshop --admin_pass=mypassword
+      php cli.php migrate
+      php cli.php migrate:status
+      php cli.php migrate:rollback --version=20240101000001
 
     HELP;
+}
+
+/**
+ * Run pending migrations.
+ */
+function runMigrate(array $args): void
+{
+    $dbHost = $args['db_host'] ?? 'localhost';
+    $dbUser = $args['db_user'] ?? 'root';
+    $dbPass = $args['db_pass'] ?? '';
+    $dbName = $args['db_name'] ?? 'corecart';
+    $targetVersion = $args['version'] ?? null;
+
+    echo "=== CoreCart Migrations ===" . PHP_EOL . PHP_EOL;
+
+    try {
+        $db = new \CoreCart\System\Engine\Database(host: $dbHost, name: $dbName, user: $dbUser, pass: $dbPass);
+        $runner = new \CoreCart\System\Migrations\MigrationRunner($db);
+
+        $results = $runner->migrateUp($targetVersion);
+
+        if (empty($results)) {
+            echo "No pending migrations." . PHP_EOL;
+        } else {
+            foreach ($results as $result) {
+                $status = $result['status'];
+                $version = $result['version'];
+                if ($status === 'success') {
+                    echo "[OK] $version" . PHP_EOL;
+                } else {
+                    echo "[FAIL] $version: " . ($result['error'] ?? 'unknown') . PHP_EOL;
+                }
+            }
+        }
+
+        echo PHP_EOL . "Done." . PHP_EOL;
+
+    } catch (\Throwable $e) {
+        echo PHP_EOL . "[ERROR] " . $e->getMessage() . PHP_EOL;
+        exit(1);
+    }
+}
+
+/**
+ * Show migration status.
+ */
+function runMigrateStatus(): void
+{
+    $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
+    $dbUser = $_ENV['DB_USER'] ?? 'root';
+    $dbPass = $_ENV['DB_PASS'] ?? '';
+    $dbName = $_ENV['DB_NAME'] ?? 'corecart';
+
+    echo "=== Migration Status ===" . PHP_EOL . PHP_EOL;
+
+    try {
+        $db = new \CoreCart\System\Engine\Database(host: $dbHost, name: $dbName, user: $dbUser, pass: $dbPass);
+        $runner = new \CoreCart\System\Migrations\MigrationRunner($db);
+
+        $status = $runner->status();
+
+        if (empty($status)) {
+            echo "No migrations found." . PHP_EOL;
+        } else {
+            foreach ($status as $item) {
+                $icon = $item['status'] === 'executed' ? '[OK]' : '[--]';
+                echo "$icon {$item['version']}: {$item['description']}" . PHP_EOL;
+            }
+        }
+
+    } catch (\Throwable $e) {
+        echo "[ERROR] " . $e->getMessage() . PHP_EOL;
+        exit(1);
+    }
+}
+
+/**
+ * Rollback migrations to target version.
+ */
+function runMigrateRollback(array $args): void
+{
+    $dbHost = $args['db_host'] ?? 'localhost';
+    $dbUser = $args['db_user'] ?? 'root';
+    $dbPass = $args['db_pass'] ?? '';
+    $dbName = $args['db_name'] ?? 'corecart';
+    $targetVersion = $args['version'] ?? '';
+
+    if ($targetVersion === '') {
+        echo "[ERROR] --version is required for rollback" . PHP_EOL;
+        exit(1);
+    }
+
+    echo "=== Rollback to $targetVersion ===" . PHP_EOL . PHP_EOL;
+
+    try {
+        $db = new \CoreCart\System\Engine\Database(host: $dbHost, name: $dbName, user: $dbUser, pass: $dbPass);
+        $runner = new \CoreCart\System\Migrations\MigrationRunner($db);
+
+        $results = $runner->migrateDown($targetVersion);
+
+        foreach ($results as $result) {
+            $status = $result['status'];
+            $version = $result['version'];
+            if ($status === 'rolled_back') {
+                echo "[OK] Rolled back $version" . PHP_EOL;
+            } else {
+                echo "[FAIL] $version: " . ($result['error'] ?? 'unknown') . PHP_EOL;
+            }
+        }
+
+        echo PHP_EOL . "Done." . PHP_EOL;
+
+    } catch (\Throwable $e) {
+        echo PHP_EOL . "[ERROR] " . $e->getMessage() . PHP_EOL;
+        exit(1);
+    }
 }

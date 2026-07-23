@@ -289,27 +289,60 @@ $params = [
         });
     }
 
-    public function updateStatus(int $id, OrderStatus $status, string $comment = ''): bool
+    /**
+     * Atomic order status transition with row lock, history, and stock return on Cancelled.
+     */
+    public function transitionStatus(int $id, OrderStatus $newStatus, string $comment = '', ?int $adminUserId = null): bool
     {
-        $order = $this->orderRepo->findById($id);
-        if (!$order) {
-            throw new \RuntimeException("Order #{$id} not found");
-        }
+        return $this->orderRepo->db()->transaction(function ($db) use ($id, $newStatus, $comment, $adminUserId) {
+            // SELECT ... FOR UPDATE — locks the order row
+            $order = $this->orderRepo->findByIdForUpdate($id);
+            if ($order === null) {
+                throw new \RuntimeException("Order #{$id} not found");
+            }
 
-        $currentStatus = OrderStatus::tryFrom($order->status);
-        if ($currentStatus === null) {
-            throw new \RuntimeException("Order has invalid status: {$order->status}");
-        }
+            $currentStatus = OrderStatus::tryFrom($order->status);
+            if ($currentStatus === null) {
+                throw new \RuntimeException("Order has invalid status: {$order->status}");
+            }
 
-        if (!$currentStatus->canTransitionTo($status)) {
-            throw new \RuntimeException(
-                "Cannot transition from '{$currentStatus->label()}' to '{$status->label()}'"
-            );
-        }
+            if (!$currentStatus->canTransitionTo($newStatus)) {
+                throw new \RuntimeException(
+                    "Cannot transition from '{$currentStatus->label()}' to '{$newStatus->label()}'"
+                );
+            }
 
-        return $this->orderRepo->updateStatus($id, $status, $comment);
+            // Update status
+            $this->orderRepo->updateStatus($id, $newStatus, $comment);
+
+            // Record history entry
+            $this->orderRepo->addHistory($id, $newStatus, $comment, false, $adminUserId);
+
+            // Return stock when cancelling
+            if ($newStatus === OrderStatus::Cancelled) {
+                foreach ($order->items as $item) {
+                    $db->execute(
+                        "UPDATE cc_product SET quantity = quantity + :qty WHERE product_id = :pid",
+                        ['qty' => $item->quantity, 'pid' => $item->productId]
+                    );
+                }
+            }
+
+            return true;
+        });
     }
 
+    /**
+     * @deprecated Use transitionStatus() instead
+     */
+    public function updateStatus(int $id, OrderStatus $status, string $comment = ''): bool
+    {
+        return $this->transitionStatus($id, $status, $comment);
+    }
+
+    /**
+     * @deprecated Use transitionStatus() with OrderStatus::Cancelled instead
+     */
     public function cancelOrder(int $id, ?int $customerId = null): bool
     {
         $order = $this->orderRepo->findById($id);
@@ -321,31 +354,16 @@ $params = [
             throw new \RuntimeException('Order does not belong to this customer');
         }
 
-        $currentStatus = OrderStatus::tryFrom($order->status);
-        if ($currentStatus === null || !$currentStatus->canTransitionTo(OrderStatus::Cancelled)) {
-            throw new \RuntimeException('Order cannot be cancelled at this stage');
-        }
-
-        // Atomically restore stock
-        return $this->orderRepo->db()->transaction(function ($db) use ($order) {
-            foreach ($order->items as $item) {
-                $db->execute(
-                    "UPDATE cc_product SET quantity = quantity + :qty WHERE product_id = :pid",
-                    ['qty' => $item->quantity, 'pid' => $item->productId]
-                );
-            }
-
-            $db->execute(
-                "UPDATE cc_order SET status = :status WHERE order_id = :id",
-                ['status' => OrderStatus::Cancelled->value, 'id' => $order->id]
-            );
-
-            return true;
-        });
+        return $this->transitionStatus($id, OrderStatus::Cancelled, 'Cancelled by customer');
     }
 
     public function getRevenue(string $dateFrom = '', string $dateTo = ''): string
     {
         return $this->orderRepo->getRevenue($dateFrom, $dateTo);
+    }
+
+    public function getHistory(int $orderId): array
+    {
+        return $this->orderRepo->getHistory($orderId);
     }
 }

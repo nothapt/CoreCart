@@ -114,7 +114,7 @@
                         <input type="hidden" name="order_id" value="{{ order.id }}">
 
                         <div class="cc-field">
-                            <label class="cc-label" for="status" style="text-align:left;padding-top:0;">
+                            <label class="cc-label cc-label-left" for="status">
                                 New status
                             </label>
                             <select id="status" name="status" class="cc-input">
@@ -127,7 +127,7 @@
                         </div>
 
                         <div class="cc-field">
-                            <label class="cc-label" for="comment" style="text-align:left;padding-top:0;">
+                            <label class="cc-label cc-label-left" for="comment">
                                 Comment
                             </label>
                             <textarea id="comment"
@@ -143,6 +143,28 @@
                     </form>
                 </div>
             </section>
+
+            {% if order_history|default([])|length > 0 %}
+            <section class="cc-panel">
+                <div class="cc-panel-heading">
+                    <svg class="cc-icon"><use href="#cc-i-list"></use></svg>
+                    Status history
+                </div>
+                <div class="cc-panel-body cc-order-history">
+                    {% for entry in order_history %}
+                        <div class="cc-history-entry">
+                            <div class="cc-history-meta">
+                                <span class="cc-badge cc-badge-info">{{ status_labels[entry.status]|default('Unknown') }}</span>
+                                <span class="cc-history-date">{{ entry.date_added }}</span>
+                            </div>
+                            {% if entry.comment|default('') != '' %}
+                                <div class="cc-history-comment">{{ entry.comment }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -67,6 +67,7 @@ class OrderController
         $context = $this->container->get(AdminContextProvider::class);
         $ctx = $context->build();
         $ctx['order'] = $order;
+        $ctx['order_history'] = $orderService->getHistory($id);
         $ctx['active_menu'] = 'order';
 
         /** @var TemplateRendererInterface $renderer */
@@ -95,7 +96,8 @@ class OrderController
         try {
             $status = OrderStatus::fromInt($statusValue);
             $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
-            $orderService->updateStatus($id, $status, $comment);
+            $adminUserId = (int) $session->get('admin_user_id', 0);
+            $orderService->transitionStatus($id, $status, $comment, $adminUserId ?: null);
 
             $session->set('flash_success', 'Order status updated');
         } catch (\InvalidArgumentException $e) {
