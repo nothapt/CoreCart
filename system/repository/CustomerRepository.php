@@ -90,6 +90,20 @@ class CustomerRepository
         ) > 0;
     }
 
+    public function verifyPasswordById(int $id, string $password): bool
+    {
+        $result = $this->db->query(
+            "SELECT password FROM cc_customer WHERE customer_id = :id",
+            ['id' => $id]
+        );
+
+        if (empty($result)) {
+            return false;
+        }
+
+        return password_verify($password, $result[0]['password']);
+    }
+
     public function updateStatus(int $id, int $status): bool
     {
         return $this->db->execute(

@@ -10,6 +10,7 @@ use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Infrastructure\SessionInterface;
 use CoreCart\System\Dto\OrderCreateDTO;
+use CoreCart\System\Validation\CheckoutValidator;
 use CoreCart\System\View\StorefrontContextProvider;
 use CoreCart\System\View\TemplateRendererInterface;
 
@@ -52,10 +53,19 @@ class CheckoutController
         $sessionId = $this->getSessionId();
         $customerId = $request->getUserId();
 
+        /** @var SessionInterface $session */
+        $session = $this->container->get(SessionInterface::class);
+
         $dto = OrderCreateDTO::fromArray(array_merge(
             $request->getBody(),
             ['customer_id' => $customerId]
         ));
+
+        $validator = new CheckoutValidator();
+        if (!$validator->validate($dto)) {
+            $session->set('flash_error', $validator->getFirstError());
+            return new RedirectResponse('/checkout');
+        }
 
         try {
             $orderService = $this->container->get(\CoreCart\System\Service\OrderService::class);
@@ -72,8 +82,6 @@ class CheckoutController
 
             return new RedirectResponse('/checkout/success?order_id=' . $orderId);
         } catch (\RuntimeException $e) {
-            /** @var SessionInterface $session */
-            $session = $this->container->get(SessionInterface::class);
             $session->set('flash_error', $e->getMessage());
             return new RedirectResponse('/checkout');
         }

@@ -49,8 +49,11 @@ final class AccountController
         try {
             $customerService->changePassword(
                 $customerId,
+                $body['current_password'] ?? '',
                 $body['new_password'] ?? '',
             );
+        } catch (\InvalidArgumentException $e) {
+            return JsonResponse::error($e->getMessage(), 422);
         } catch (\RuntimeException $e) {
             return JsonResponse::error($e->getMessage(), 400);
         }

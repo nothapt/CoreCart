@@ -35,6 +35,8 @@ class TwigRenderer implements TemplateRendererInterface
             $this->twig->addExtension(new \Twig\Extension\DebugExtension());
         }
 
+        $this->twig->addExtension(new SanitizeExtension());
+
         $this->twig->addGlobal('assets', $assets);
         $this->twig->addGlobal('theme', $theme);
     }

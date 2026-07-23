@@ -126,10 +126,17 @@ class CustomerService
         return $this->addressRepo->delete($addressId, $customerId);
     }
 
-    public function changePassword(int $customerId, string $newPassword): bool
+    public function changePassword(int $customerId, string $currentPassword, string $newPassword): bool
     {
+        if ($currentPassword === '') {
+            throw new \InvalidArgumentException('Current password is required');
+        }
         if (strlen($newPassword) < 6) {
-            throw new \InvalidArgumentException('Password must be at least 6 characters');
+            throw new \InvalidArgumentException('New password must be at least 6 characters');
+        }
+
+        if (!$this->customerRepo->verifyPasswordById($customerId, $currentPassword)) {
+            throw new \RuntimeException('Current password is incorrect');
         }
 
         return $this->customerRepo->updatePassword($customerId, $newPassword);

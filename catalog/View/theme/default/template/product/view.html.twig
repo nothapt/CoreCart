@@ -33,7 +33,7 @@
 {% if product.description is defined and product.description %}
 <div class="cc-mt-8">
     <h2>Description</h2>
-    <div>{{ product.description|raw }}</div>
+    <div>{{ product.description|sanitize }}</div>
 </div>
 {% endif %}
 {% endblock %}

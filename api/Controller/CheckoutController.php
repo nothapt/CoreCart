@@ -54,6 +54,11 @@ final class CheckoutController
             comment: $body['comment'] ?? null,
         );
 
+        $validator = new \CoreCart\System\Validation\CheckoutValidator();
+        if (!$validator->validate($dto)) {
+            return JsonResponse::error($validator->getFirstError(), 422);
+        }
+
         $orderService = $this->container->get(OrderService::class);
 
         try {
