@@ -36,11 +36,16 @@ class Session implements SessionInterface
         if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
             return true;
         }
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        if (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
             return true;
         }
-        if (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') {
-            return true;
+        if (self::isTrustedProxyRequest()) {
+            if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+                return true;
+            }
+            if (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') {
+                return true;
+            }
         }
         if (isset($_SERVER['HTTP_CF_VISITOR'])) {
             $cf = json_decode($_SERVER['HTTP_CF_VISITOR'], true);
@@ -48,9 +53,85 @@ class Session implements SessionInterface
                 return true;
             }
         }
-        if (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
-            return true;
+        return false;
+    }
+
+    /**
+     * Check if the request comes from a trusted proxy.
+     */
+    private static function isTrustedProxyRequest(): bool
+    {
+        $trustProxy = filter_var(
+            getenv('TRUST_PROXY') ?: ($_ENV['TRUST_PROXY'] ?? 'false'),
+            FILTER_VALIDATE_BOOLEAN,
+            FILTER_NULL_ON_FAILURE,
+        );
+
+        if (!$trustProxy) {
+            return false;
         }
+
+        $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+        if ($clientIp === '') {
+            return false;
+        }
+
+        return self::isTrustedProxy($clientIp);
+    }
+
+    /**
+     * Check if a client IP is in the trusted proxies list.
+     * Supports comma-separated IPs or CIDRs (e.g. "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16").
+     */
+    public static function isTrustedProxy(string $clientIp): bool
+    {
+        $trustedProxies = getenv('TRUSTED_PROXIES') ?: ($_ENV['TRUSTED_PROXIES'] ?? '');
+        if ($trustedProxies === '') {
+            return false;
+        }
+
+        $proxies = array_map('trim', explode(',', $trustedProxies));
+        $clientIpBin = @inet_pton($clientIp);
+        if ($clientIpBin === false) {
+            return false;
+        }
+
+        foreach ($proxies as $proxy) {
+            if (str_contains($proxy, '/')) {
+                [$subnet, $prefix] = explode('/', $proxy, 2);
+                $subnetBin = @inet_pton(trim($subnet));
+                $prefix = (int) $prefix;
+                if ($subnetBin === false || $prefix < 0 || $prefix > 128) {
+                    continue;
+                }
+                $mask = $prefix === 0
+                    ? "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+                    : inet_ntop(~pack('N', ~((1 << (32 - min($prefix, 32))) - 1)) . str_repeat("\0", 16));
+                if (strlen($clientIpBin) === 4 && strlen($subnetBin) === 4) {
+                    $mask4 = inet_ntop(~pack('N', ~((1 << (32 - min($prefix, 32))) - 1)) . str_repeat("\0", 12));
+                    $mask4Bin = @inet_pton($mask4);
+                    if ($mask4Bin !== false && ($clientIpBin & $mask4Bin) === ($subnetBin & $mask4Bin)) {
+                        return true;
+                    }
+                } elseif (strlen($clientIpBin) === 16 && strlen($subnetBin) === 16) {
+                    $mask16 = inet_ntop(
+                        pack(
+                            'N',
+                            $prefix >= 32 ? 0xFFFFFFFF : (~((1 << (32 - min($prefix, 32))) - 1))
+                        ) . ($prefix > 32 ? inet_pton(substr(inet_ntop(pack('N', ~((1 << (32 - min($prefix - 32, 32))) - 1))), 0, -4)) : str_repeat("\0", 12))
+                    );
+                    $mask16Bin = @inet_pton($mask16);
+                    if ($mask16Bin !== false && ($clientIpBin & $mask16Bin) === ($subnetBin & $mask16Bin)) {
+                        return true;
+                    }
+                }
+            } else {
+                if (inet_pton($proxy) === $clientIpBin) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 

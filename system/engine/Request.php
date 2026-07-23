@@ -75,7 +75,7 @@ class Request
             files: $files,
             user: null,
             requestId: $requestId,
-            ipAddress: $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0',
+            ipAddress: self::resolveIpAddress($headers),
             contentType: $contentType,
             contentLength: $contentLength,
             rawBody: $rawBody,
@@ -286,5 +286,45 @@ class Request
             $headers['content-length'] = $_SERVER['CONTENT_LENGTH'];
         }
         return $headers;
+    }
+
+    /**
+     * Resolve the real client IP address, respecting trusted proxies.
+     */
+    private static function resolveIpAddress(array $headers): string
+    {
+        $trustProxy = filter_var(
+            getenv('TRUST_PROXY') ?: ($_ENV['TRUST_PROXY'] ?? 'false'),
+            FILTER_VALIDATE_BOOLEAN,
+            FILTER_NULL_ON_FAILURE,
+        );
+
+        if (!$trustProxy) {
+            return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        }
+
+        $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+        if ($clientIp !== '' && !\CoreCart\System\Infrastructure\Session::isTrustedProxy($clientIp)) {
+            return $clientIp;
+        }
+
+        $forwardedFor = $headers['x-forwarded-for'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+        if ($forwardedFor !== '') {
+            $ips = array_map('trim', explode(',', $forwardedFor));
+            $clientIp = reset($ips);
+        }
+
+        return self::validateIp($clientIp) ? $clientIp : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+    }
+
+    /**
+     * Validate an IP address (IPv4 or IPv6).
+     */
+    private static function validateIp(string $ip): bool
+    {
+        if ($ip === '' || $ip === '0.0.0.0') {
+            return false;
+        }
+        return filter_var($ip, FILTER_VALIDATE_IP) !== false;
     }
 }

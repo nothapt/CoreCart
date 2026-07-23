@@ -82,6 +82,10 @@ final class AdminRouteProvider
 
         // System
         $router->addRoute('/admin/setting/index', \CoreCart\Admin\Controller\SettingController::class, 'index', $authenticated, ['GET']);
+        $router->addRoute('/admin/setting/store', \CoreCart\Admin\Controller\SettingController::class, 'store', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/setting/local', \CoreCart\Admin\Controller\SettingController::class, 'local', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/setting/security', \CoreCart\Admin\Controller\SettingController::class, 'security', $authenticatedMutation, ['POST']);
+        $router->addRoute('/admin/setting/mail', \CoreCart\Admin\Controller\SettingController::class, 'mail', $authenticatedMutation, ['POST']);
         $router->addRoute('/admin/modification/index', \CoreCart\Admin\Controller\ModificationController::class, 'index', $authenticated, ['GET']);
     }
 }

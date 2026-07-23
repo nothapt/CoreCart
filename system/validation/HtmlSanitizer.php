@@ -21,7 +21,8 @@ class HtmlSanitizer
 
     public function sanitize(string $html): string
     {
-        $html = strip_tags($html, '<' . implode('>', self::ALLOWED_TAGS) . '>');
+        $allowedTags = implode(',', array_map(fn(string $t) => "<{$t}>", self::ALLOWED_TAGS));
+        $html = strip_tags($html, $allowedTags);
 
         $html = preg_replace_callback(
             '/<(\w+)(\s[^>]*)?>/i',

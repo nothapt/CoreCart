@@ -4,18 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sign in — CoreCart Admin{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ assets.css('admin-tokens.css') }}">
     <link rel="stylesheet" href="{{ assets.css('admin-base.css') }}">
+    <link rel="stylesheet" href="{{ assets.css('admin-layout.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body class="cc-admin-auth">
-    <div class="cc-admin-auth-wrapper">
-        {% include '@admin/common/flash.html.twig' %}
-        {% block content %}{% endblock %}
-        <p class="cc-text-center cc-mt-4 cc-text-sm">
-            <a href="/" class="cc-footer-link">Back to store</a>
-        </p>
+    {% include '@admin/common/icons.html.twig' %}
+    <div class="cc-login-card">
+        <div class="cc-login-header">
+            <a href="/" class="cc-login-brand">
+                <span>corecart</span>
+                <svg class="cc-icon cc-login-brand-icon" aria-hidden="true">
+                    <use href="#cc-i-cart"></use>
+                </svg>
+            </a>
+            <p class="cc-login-subtitle">Administration</p>
+        </div>
+
+        <div class="cc-login-body">
+            {% include '@admin/common/flash.html.twig' %}
+            {% block content %}{% endblock %}
+        </div>
+
+        <div class="cc-login-footer">
+            Powered by <strong>CoreCart</strong>
+        </div>
+    </div>
+
+    <div class="cc-login-back">
+        <a href="/">&larr; Back to store</a>
     </div>
 </body>
 </html>

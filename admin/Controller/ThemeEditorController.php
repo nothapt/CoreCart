@@ -9,19 +9,35 @@ use CoreCart\System\Engine\RedirectResponse;
 use CoreCart\System\Engine\Request;
 use CoreCart\System\Engine\Response;
 use CoreCart\System\Infrastructure\SessionInterface;
+use CoreCart\System\Service\ThemeEditorService;
 use CoreCart\System\View\AdminContextProvider;
 use CoreCart\System\View\TemplateRendererInterface;
+use CoreCart\System\View\TwigRenderer;
 
 final class ThemeEditorController
 {
     private const AREAS = ['catalog', 'admin'];
 
+    private ?ThemeEditorService $themeEditorService = null;
+
     public function __construct(
         private Container $container,
     ) {}
 
+    private function getThemeEditorService(): ThemeEditorService
+    {
+        if ($this->themeEditorService === null) {
+            /** @var TwigRenderer $twigRenderer */
+            $twigRenderer = $this->container->get(TemplateRendererInterface::class);
+            $this->themeEditorService = new ThemeEditorService($twigRenderer->getTwig());
+        }
+        return $this->themeEditorService;
+    }
+
     public function index(Request $request): Response
     {
+        $service = $this->getThemeEditorService();
+
         $area = $this->normalizeArea((string) $request->getQueryParam('area', 'catalog'));
         $files = $this->listTemplates($area);
 
@@ -32,12 +48,7 @@ final class ThemeEditorController
 
         $content = '';
         if ($selected !== '') {
-            $path = $this->resolveTemplate($area, $selected);
-            $read = file_get_contents($path);
-            if ($read === false) {
-                throw new \RuntimeException('Unable to read template');
-            }
-            $content = $read;
+            $content = $service->readFile($area, $selected);
         }
 
         /** @var AdminContextProvider $context */
@@ -59,6 +70,8 @@ final class ThemeEditorController
 
     public function save(Request $request): Response
     {
+        $service = $this->getThemeEditorService();
+
         $area = $this->normalizeArea((string) $request->getInput('area', 'catalog'));
         $file = (string) $request->getInput('file', '');
         $action = (string) $request->getInput('action', 'save');
@@ -67,20 +80,16 @@ final class ThemeEditorController
         $session = $this->container->get(SessionInterface::class);
 
         try {
-            $path = $this->resolveTemplate($area, $file);
-
             if ($action === 'reset') {
-                $this->restoreLatestBackup($area, $file, $path);
+                $backups = $service->getBackups($area, $file);
+                if (empty($backups)) {
+                    throw new \RuntimeException('No backup exists for this template');
+                }
+                $service->restoreBackup($area, $file, $backups[0]);
                 $session->set('flash_success', 'Latest template backup restored');
             } else {
                 $content = (string) $request->getInput('content', '');
-
-                $this->backupTemplate($area, $file, $path);
-
-                if (file_put_contents($path, $content, LOCK_EX) === false) {
-                    throw new \RuntimeException('Unable to save template');
-                }
-
+                $service->saveFile($area, $file, $content);
                 $session->set('flash_success', 'Template saved');
             }
 
@@ -151,94 +160,6 @@ final class ThemeEditorController
         natcasesort($files);
 
         return array_values($files);
-    }
-
-    private function resolveTemplate(string $area, string $file): string
-    {
-        if (
-            $file === ''
-            || str_contains($file, "\0")
-            || str_contains($file, '..')
-            || !str_ends_with(strtolower($file), '.twig')
-        ) {
-            throw new \InvalidArgumentException('Invalid template path');
-        }
-
-        $root = realpath($this->templateRoot($area));
-        if ($root === false) {
-            throw new \RuntimeException('Theme directory not found');
-        }
-
-        $candidate = realpath(
-            $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $file)
-        );
-
-        if (
-            $candidate === false
-            || !is_file($candidate)
-            || !str_starts_with($candidate, $root . DIRECTORY_SEPARATOR)
-        ) {
-            throw new \RuntimeException('Template not found');
-        }
-
-        return $candidate;
-    }
-
-    private function backupTemplate(string $area, string $file, string $path): void
-    {
-        $backupRoot = dirname(__DIR__, 2)
-            . DIRECTORY_SEPARATOR
-            . 'storage'
-            . DIRECTORY_SEPARATOR
-            . 'backups'
-            . DIRECTORY_SEPARATOR
-            . 'theme-editor'
-            . DIRECTORY_SEPARATOR
-            . $area;
-
-        $targetDir = $backupRoot . DIRECTORY_SEPARATOR . dirname($file);
-        if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
-            throw new \RuntimeException('Unable to create backup directory');
-        }
-
-        $backupPath = $backupRoot
-            . DIRECTORY_SEPARATOR
-            . str_replace('/', DIRECTORY_SEPARATOR, $file)
-            . '.'
-            . date('Ymd-His')
-            . '.bak';
-
-        if (!copy($path, $backupPath)) {
-            throw new \RuntimeException('Unable to create template backup');
-        }
-    }
-
-    private function restoreLatestBackup(string $area, string $file, string $path): void
-    {
-        $pattern = dirname(__DIR__, 2)
-            . DIRECTORY_SEPARATOR
-            . 'storage'
-            . DIRECTORY_SEPARATOR
-            . 'backups'
-            . DIRECTORY_SEPARATOR
-            . 'theme-editor'
-            . DIRECTORY_SEPARATOR
-            . $area
-            . DIRECTORY_SEPARATOR
-            . str_replace('/', DIRECTORY_SEPARATOR, $file)
-            . '.*.bak';
-
-        $backups = glob($pattern) ?: [];
-        rsort($backups, SORT_STRING);
-
-        $latest = $backups[0] ?? null;
-        if ($latest === null || !is_file($latest)) {
-            throw new \RuntimeException('No backup exists for this template');
-        }
-
-        if (!copy($latest, $path)) {
-            throw new \RuntimeException('Unable to restore template backup');
-        }
     }
 
     private function clearTwigCache(): void

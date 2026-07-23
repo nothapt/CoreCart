@@ -37,7 +37,8 @@ match ($command) {
     'migrate'        => runMigrate($args),
     'migrate:status' => runMigrateStatus(),
     'migrate:rollback' => runMigrateRollback($args),
-    default          => printHelp(),
+    'theme:restore'    => runThemeRestore($args),
+    default            => printHelp(),
 };
 
 /**
@@ -174,6 +175,40 @@ function importSchema(PDO $pdo, string $sqlFile): void
 }
 
 /**
+ * Restore a theme template from a backup file.
+ */
+function runThemeRestore(array $args): void
+{
+    $area = $args['area'] ?? '';
+    $file = $args['file'] ?? '';
+    $backup = $args['backup'] ?? '';
+
+    if ($area === '' || $file === '' || $backup === '') {
+        echo "[ERROR] --area, --file, and --backup are required." . PHP_EOL;
+        echo "Usage: php cli.php theme:restore --area=catalog --file=product/view.html.twig --backup=product/view.html.twig.20240101-120000.bak" . PHP_EOL;
+        exit(1);
+    }
+
+    echo "=== Theme Backup Restore ===" . PHP_EOL . PHP_EOL;
+
+    try {
+        $loader = new \Twig\Loader\FilesystemLoader();
+        $twig = new \Twig\Environment($loader);
+
+        $service = new \CoreCart\System\Service\ThemeEditorService($twig);
+
+        $service->restoreBackup($area, $file, $backup);
+
+        echo "[OK] Restored '{$file}' from backup '{$backup}'" . PHP_EOL;
+        echo PHP_EOL . "Done." . PHP_EOL;
+
+    } catch (\Throwable $e) {
+        echo PHP_EOL . "[ERROR] " . $e->getMessage() . PHP_EOL;
+        exit(1);
+    }
+}
+
+/**
  * Print usage help.
  */
 function printHelp(): void
@@ -187,6 +222,7 @@ function printHelp(): void
       php cli.php migrate [options]        Run pending migrations
       php cli.php migrate:status           Show migration status
       php cli.php migrate:rollback [opts]  Rollback to version
+      php cli.php theme:restore [opts]     Restore template from backup
       php cli.php help                     Show this message
 
     Install options:
@@ -201,11 +237,17 @@ function printHelp(): void
     Migrate options:
       --version=VERSION       Target version (optional)
 
+    Theme restore options:
+      --area=catalog          Theme area (catalog or admin)
+      --file=...              Template file path
+      --backup=...            Backup filename
+
     Example:
       php cli.php install --db_user=root --db_pass=secret --db_name=myshop --admin_pass=mypassword
       php cli.php migrate
       php cli.php migrate:status
       php cli.php migrate:rollback --version=20240101000001
+      php cli.php theme:restore --area=catalog --file=product/view.html.twig --backup=product/view.html.twig.20240101-120000.bak
 
     HELP;
 }

@@ -14,6 +14,7 @@
             "CoreCart\\System\\Route\\": "system/route/",
             "CoreCart\\System\\View\\": "system/view/",
             "CoreCart\\System\\Migrations\\": "system/migrations/",
+            "CoreCart\\System\\Validation\\": "system/validation/",
             "CoreCart\\Admin\\Controller\\": "admin/Controller/",
             "CoreCart\\Api\\Controller\\": "api/Controller/",
             "CoreCart\\Catalog\\Controller\\": "catalog/Controller/",

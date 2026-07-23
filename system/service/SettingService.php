@@ -7,35 +7,50 @@ use CoreCart\System\Repository\SettingRepository;
 
 class SettingService
 {
-    private SettingRepository $settingRepo;
+    public function __construct(private SettingRepository $repo) {}
 
-    public function __construct(SettingRepository $settingRepo)
+    public function get(string $group, string $key, string $default = ''): string
     {
-        $this->settingRepo = $settingRepo;
-    }
-
-    public function get(string $key, ?string $default = null): ?string
-    {
-        return $this->settingRepo->get($key, $default);
-    }
-
-    public function set(string $key, string $value, string $group = 'config'): void
-    {
-        $this->settingRepo->set($key, $value, $group);
+        return $this->repo->get($group, $key, $default);
     }
 
     public function getGroup(string $group): array
     {
-        return $this->settingRepo->getGroup($group);
+        return $this->repo->getGroup($group);
     }
 
-    public function getAll(): array
+    public function set(string $group, string $key, string $value): void
     {
-        return $this->settingRepo->getAll();
+        $this->repo->set($group, $key, $value);
     }
 
-    public function delete(string $key): bool
+    public function setGroup(string $group, array $data): void
     {
-        return $this->settingRepo->delete($key);
+        $this->repo->setGroup($group, $data);
+    }
+
+    public function delete(string $group, string $key): void
+    {
+        $this->repo->delete($group, $key);
+    }
+
+    public function getStoreName(): string
+    {
+        return $this->get('store', 'name', 'CoreCart');
+    }
+
+    public function getStoreEmail(): string
+    {
+        return $this->get('store', 'email', '');
+    }
+
+    public function getStoreMeta(): array
+    {
+        return $this->getGroup('meta');
+    }
+
+    public function isMaintenanceMode(): bool
+    {
+        return $this->get('store', 'maintenance', '0') === '1';
     }
 }

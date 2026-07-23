@@ -7,65 +7,53 @@ use CoreCart\System\Engine\Database;
 
 class SettingRepository
 {
-    private Database $db;
+    public function __construct(private Database $db) {}
 
-    public function __construct(Database $db)
-    {
-        $this->db = $db;
-    }
-
-    public function get(string $key, ?string $default = null): ?string
+    public function get(string $group, string $key, string $default = ''): string
     {
         $result = $this->db->query(
-            "SELECT setting_value FROM cc_setting WHERE setting_key = :key",
-            ['key' => $key]
+            "SELECT value FROM cc_setting WHERE `group` = :group AND `key` = :key LIMIT 1",
+            ['group' => $group, 'key' => $key]
         );
 
-        return !empty($result[0]['setting_value']) ? $result[0]['setting_value'] : $default;
-    }
-
-    public function set(string $key, string $value, string $group = 'config'): void
-    {
-        $this->db->execute(
-            "INSERT INTO cc_setting (setting_key, setting_value, setting_group)
-             VALUES (:key, :value, :grp)
-             ON DUPLICATE KEY UPDATE setting_value = :value2",
-            ['key' => $key, 'value' => $value, 'grp' => $group, 'value2' => $value]
-        );
-    }
-
-    public function delete(string $key): bool
-    {
-        return $this->db->execute(
-            "DELETE FROM cc_setting WHERE setting_key = :key",
-            ['key' => $key]
-        ) > 0;
+        return !empty($result[0]['value']) ? $result[0]['value'] : $default;
     }
 
     public function getGroup(string $group): array
     {
         $result = $this->db->query(
-            "SELECT setting_key, setting_value FROM cc_setting WHERE setting_group = :grp",
-            ['grp' => $group]
+            "SELECT `key`, value FROM cc_setting WHERE `group` = :group",
+            ['group' => $group]
         );
 
         $settings = [];
         foreach ($result as $row) {
-            $settings[$row['setting_key']] = $row['setting_value'];
+            $settings[$row['key']] = $row['value'];
         }
         return $settings;
     }
 
-    public function getAll(): array
+    public function set(string $group, string $key, string $value): void
     {
-        $result = $this->db->query(
-            "SELECT setting_key, setting_value, setting_group FROM cc_setting ORDER BY setting_group, setting_key"
+        $this->db->execute(
+            "INSERT INTO cc_setting (`group`, `key`, value) VALUES (:group, :key, :value)
+             ON DUPLICATE KEY UPDATE value = :value2",
+            ['group' => $group, 'key' => $key, 'value' => $value, 'value2' => $value]
         );
+    }
 
-        $settings = [];
-        foreach ($result as $row) {
-            $settings[$row['setting_group']][$row['setting_key']] = $row['setting_value'];
+    public function setGroup(string $group, array $data): void
+    {
+        foreach ($data as $key => $value) {
+            $this->set($group, $key, (string) $value);
         }
-        return $settings;
+    }
+
+    public function delete(string $group, string $key): void
+    {
+        $this->db->execute(
+            "DELETE FROM cc_setting WHERE `group` = :group AND `key` = :key",
+            ['group' => $group, 'key' => $key]
+        );
     }
 }
